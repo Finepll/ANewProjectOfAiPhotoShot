@@ -1,0 +1,23 @@
+<view class="tabbar">
+  <view
+    wx:for="{{list}}"
+    wx:key="text"
+    class="tab {{item.center ? 'tab--center' : ''}}"
+    data-path="{{item.pagePath}}"
+    data-index="{{item.index}}"
+    bindtap="onTabTap"
+  >
+    <block wx:if="{{item.center}}">
+      <view class="shutter {{selected === item.index ? 'shutter--on' : ''}}">
+        <view class="shutter__ring"></view>
+      </view>
+    </block>
+    <block wx:else>
+      <view class="icon icon--{{item.icon}} {{selected === item.index ? 'icon--on' : ''}}">
+        <view class="p p1"></view>
+        <view class="p p2"></view>
+      </view>
+    </block>
+    <text class="tab__text {{selected === item.index ? 'tab__text--on' : ''}}">{{item.text}}</text>
+  </view>
+</view>

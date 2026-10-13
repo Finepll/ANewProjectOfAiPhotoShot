@@ -1,0 +1,112 @@
+/* ---------------- 预览 ---------------- */
+.preview {
+  margin-top: 22rpx;
+  border-radius: 28rpx;
+  overflow: hidden;
+  background: var(--c-card);
+  box-shadow: var(--shadow);
+  padding: 16rpx;
+}
+
+.preview__img {
+  width: 100%;
+  border-radius: 20rpx;
+  display: block;
+}
+
+/* ---------------- 元信息 ---------------- */
+.meta {
+  margin-top: 20rpx;
+}
+
+.meta__row {
+  display: flex;
+  gap: 18rpx;
+  padding: 18rpx 0;
+  border-bottom: 2rpx solid var(--c-line);
+  font-size: 27rpx;
+}
+
+.meta__row:last-child {
+  border-bottom: none;
+}
+
+.meta__k {
+  width: 180rpx;
+  color: var(--c-ink-2);
+  flex: none;
+}
+
+/* ---------------- 交付清单 ---------------- */
+.deliver {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 20rpx 0;
+  border-bottom: 2rpx solid var(--c-line);
+}
+
+.deliver:last-child {
+  border-bottom: none;
+}
+
+.deliver:active {
+  background: rgba(199, 211, 219, 0.2);
+}
+
+.deliver__thumb {
+  width: 108rpx;
+  height: 108rpx;
+  border-radius: 18rpx;
+  overflow: hidden;
+  background: var(--c-blue-soft);
+  flex: none;
+}
+
+.deliver__img {
+  width: 100%;
+  height: 100%;
+}
+
+.deliver__name {
+  font-size: 28rpx;
+  font-weight: 500;
+}
+
+.batch-item {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 24rpx 20rpx;
+  border-radius: var(--r-md);
+  border: 2rpx solid var(--c-line);
+  margin-top: 14rpx;
+  transition: all 0.16s ease;
+}
+
+.batch-item--on {
+  border-color: var(--c-ink);
+  background: rgba(199, 211, 219, 0.28);
+}
+
+.checkbox {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 12rpx;
+  border: 2rpx solid var(--c-tan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26rpx;
+  color: var(--c-ink);
+  background: var(--c-card);
+  flex: none;
+}
+
+.offscreen {
+  position: fixed;
+  left: -2000rpx;
+  top: 0;
+  width: 1200px;
+  height: 1800px;
+}

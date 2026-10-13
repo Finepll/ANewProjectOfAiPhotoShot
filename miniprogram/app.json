@@ -1,0 +1,45 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/templates/index",
+    "pages/camera/index",
+    "pages/works/index",
+    "pages/profile/index",
+    "pages/editor/index",
+    "pages/idphoto/index",
+    "pages/result/index",
+    "pages/member/index",
+    "pages/orders/index",
+    "pages/login/index",
+    "pages/agreement/index"
+  ],
+  "window": {
+    "backgroundTextStyle": "dark",
+    "navigationBarBackgroundColor": "#C7D3DB",
+    "navigationBarTitleText": "AI 照相馆",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#FCF7DF"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#A79A8A",
+    "selectedColor": "#3E3630",
+    "backgroundColor": "#FCF7DF",
+    "borderStyle": "white",
+    "list": [
+      { "pagePath": "pages/index/index", "text": "影棚" },
+      { "pagePath": "pages/templates/index", "text": "模板" },
+      { "pagePath": "pages/camera/index", "text": "拍摄" },
+      { "pagePath": "pages/works/index", "text": "记录" },
+      { "pagePath": "pages/profile/index", "text": "我的" }
+    ]
+  },
+  "permission": {
+    "scope.writePhotosAlbum": {
+      "desc": "用于把生成的成品图保存到你的手机相册"
+    }
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

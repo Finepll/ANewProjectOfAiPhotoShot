@@ -1,0 +1,114 @@
+<view class="page">
+  <!-- 顶部品牌区 -->
+  <view class="hero">
+    <view class="hero__top between">
+      <view>
+        <view class="hero__title">AI 照相馆</view>
+        <view class="hero__sub">拍一张，交给影棚</view>
+      </view>
+      <view class="hero__quota" bindtap="goMember">
+        <view class="hero__quota-num">{{quota}}</view>
+        <view class="hero__quota-label">{{member.active ? member.planName : '免费额度'}}</view>
+      </view>
+    </view>
+
+    <view class="hero__actions">
+      <view class="hero__btn hero__btn--main hit" bindtap="goCamera">
+        <view class="hero__btn-icon">◎</view>
+        <view>
+          <view class="hero__btn-title">拍一张</view>
+          <view class="hero__btn-sub">2D 引导 · 端侧质检</view>
+        </view>
+      </view>
+      <view class="hero__btn hit" bindtap="importFromAlbum">
+        <view class="hero__btn-icon">▣</view>
+        <view>
+          <view class="hero__btn-title">相册导入</view>
+          <view class="hero__btn-sub">选已有照片</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 当前引导提示 -->
+  <view class="notice notice--cream" style="margin-top: 20rpx">
+    <text>提示</text>
+    <text class="grow">{{guides[guideIndex].text}}</text>
+  </view>
+
+  <!-- 隐私模式状态（F-ACC-03） -->
+  <view class="card privacy" bindtap="goPrivacy">
+    <view class="row grow">
+      <view class="cell__icon">🔒</view>
+      <view class="grow">
+        <view class="privacy__title">
+          {{privacy.localMode ? '本地隐私模式已开启' : '本地隐私模式已关闭'}}
+        </view>
+        <view class="tiny">照片默认不上行，全部在本机处理</view>
+      </view>
+    </view>
+    <view class="privacy__arrow">查看隐私看板 ›</view>
+  </view>
+
+  <!-- 影棚模板（F-STU-01） -->
+  <view class="section-title">
+    <view class="section-title__main">影棚模板</view>
+    <text class="tiny" bindtap="goTemplates">全部 ›</text>
+  </view>
+
+  <scroll-view class="tpl-scroll" scroll-x enable-flex show-scrollbar="{{false}}">
+    <view class="tpl-track">
+      <view
+        wx:for="{{hotTemplates}}"
+        wx:key="id"
+        class="tpl hit"
+        data-id="{{item.id}}"
+        bindtap="useTemplate"
+      >
+        <view class="tpl__cover" style="background: linear-gradient(140deg, {{item.bg.from}}, {{item.bg.to}})">
+          <text class="tpl__light">{{item.light}}</text>
+        </view>
+        <view class="tpl__name">{{item.name}}</view>
+        <view class="tiny">{{item.scene}}</view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 快捷入口 -->
+  <view class="grid-2" style="margin-top: 26rpx">
+    <view class="card card--tight quick hit" bindtap="goIdPhoto">
+      <view class="quick__title">证件照</view>
+      <view class="tiny">规格库 · 换底 · 自动裁切</view>
+      <view class="quick__tag tag tag--tan">F-ID</view>
+    </view>
+    <view class="card card--tight quick hit" bindtap="goMember">
+      <view class="quick__title">会员权益</view>
+      <view class="tiny">月卡 / 季卡 / 年卡</view>
+      <view class="quick__tag tag">F-PAY</view>
+    </view>
+  </view>
+
+  <!-- 最近导出记录（产品不建长期作品库，只留元信息） -->
+  <view class="section-title">
+    <view class="section-title__main">最近导出记录</view>
+    <text class="tiny" bindtap="goWorks">全部 ›</text>
+  </view>
+
+  <view class="card card--tight" wx:if="{{works.length}}">
+    <view class="cell" wx:for="{{works}}" wx:key="id" data-id="{{item.id}}" bindtap="openWork">
+      <view class="work-cover">
+        <text class="work-cover__text">{{item.type === 'idphoto' ? '证件' : '影棚'}}</text>
+      </view>
+      <view class="grow">
+        <view class="work-title ellipsis">{{item.title}}</view>
+        <view class="tiny">{{item.createdAt}} · {{item.source}}</view>
+      </view>
+      <view class="cell__arrow">›</view>
+    </view>
+  </view>
+
+  <view class="card empty" wx:else>
+    <view class="empty__ring">◎</view>
+    <text>还没有导出记录，去拍一张试试</text>
+  </view>
+</view>

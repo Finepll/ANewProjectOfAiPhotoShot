@@ -1,0 +1,173 @@
+<view class="page page--flat id">
+  <!-- 预览区 -->
+  <view class="stage-wrap">
+    <canvas id="stage" type="2d" class="stage"></canvas>
+    <view class="stage__badge tag tag--ink">{{activeSpec.name}} · {{activeBackdrop.name}}</view>
+    <view class="stage__loading" wx:if="{{!ready}}">画布准备中…</view>
+  </view>
+
+  <view class="notice notice--cream" style="margin-top: 20rpx">
+    <text>F-ID-02</text>
+    <text class="grow">抠图与换底全部在本机完成，原图不上行、不自动落盘。</text>
+  </view>
+
+  <!-- F-ID-01 智能推荐 -->
+  <view class="card">
+    <view class="between">
+      <view class="title">规格推荐</view>
+      <text class="tiny">今日剩余 {{freqLeft}} 张（F-ID-04 频次）</text>
+    </view>
+    <view class="usages">
+      <view
+        wx:for="{{usages}}"
+        wx:key="*this"
+        class="chip {{activeUsage === item ? 'chip--on' : ''}}"
+        data-usage="{{item}}"
+        bindtap="pickUsage"
+      >{{item}}</view>
+    </view>
+    <input
+      class="search"
+      placeholder="搜索规格：一寸 / 护照 / 社保…"
+      placeholder-class="field__ph"
+      value="{{keyword}}"
+      bindinput="onKeyword"
+    />
+  </view>
+
+  <!-- 规格卡片 -->
+  <view class="grid-3 spec-grid">
+    <view
+      wx:for="{{filtered}}"
+      wx:key="id"
+      class="spec hit {{activeSpec.id === item.id ? 'spec--on' : ''}}"
+      data-id="{{item.id}}"
+      bindtap="pickSpec"
+    >
+      <view class="spec__box" style="width: {{item.bw}}rpx"></view>
+      <view class="spec__name">{{item.name}}</view>
+      <view class="tiny">{{item.mm}}</view>
+      <text class="tag tag--tan spec__tag" wx:if="{{recommendIds[0] === item.id}}">推荐</text>
+    </view>
+  </view>
+
+  <!-- F-ID-02 底色 -->
+  <view class="card">
+    <view class="between">
+      <view class="title">底色替换</view>
+      <text class="tiny" wx:if="{{customLocked}}">正式规格锁定标准三色</text>
+    </view>
+    <view class="swatches">
+      <view
+        wx:for="{{backdrops}}"
+        wx:key="key"
+        class="swatch {{activeBackdrop.key === item.key ? 'swatch--on' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="pickBackdrop"
+      >
+        <view class="swatch__dot" style="background: {{item.color}}"></view>
+        <text class="swatch__name">{{item.name}}</text>
+      </view>
+    </view>
+    <view class="field" wx:if="{{!customLocked}}">
+      <text class="field__label">自定义取色</text>
+      <input class="field__input mono" type="text" value="#FCF7DF" bindchange="onCustomColor" />
+      <text class="tiny">仅非正式规格开放</text>
+    </view>
+    <view class="notice" style="margin-top: 16rpx">
+      <text>F-ID-02</text>
+      <text class="grow">边缘有杂边时可微调缩放与位置；演示环境用椭圆羽化近似端侧 alpha 通道。</text>
+    </view>
+  </view>
+
+  <!-- F-ID-03 微调 -->
+  <view class="card">
+    <view class="between">
+      <view class="title">裁切与构图</view>
+      <text class="tag">F-ID-03</text>
+    </view>
+    <view class="slider">
+      <text class="slider__label">缩放</text>
+      <slider
+        class="grow"
+        min="0.8"
+        max="1.35"
+        step="0.01"
+        value="{{zoom}}"
+        activeColor="#3E3630"
+        backgroundColor="#E5ECF1"
+        block-size="20"
+        bindchanging="onZoom"
+        bindchange="onZoom"
+      />
+      <text class="slider__val">{{zoom}}</text>
+    </view>
+    <view class="slider">
+      <text class="slider__label">上下</text>
+      <slider
+        class="grow"
+        min="-0.4"
+        max="0.4"
+        step="0.01"
+        value="{{headOffset}}"
+        activeColor="#3E3630"
+        backgroundColor="#E5ECF1"
+        block-size="20"
+        bindchanging="onHeadOffset"
+        bindchange="onHeadOffset"
+      />
+      <text class="slider__val">{{headOffset}}</text>
+    </view>
+
+    <view class="checks">
+      <view class="check {{item.ok ? 'check--ok' : 'check--warn'}}" wx:for="{{checks}}" wx:key="key">
+        <text class="check__dot">{{item.ok ? '✓' : '!'}}</text>
+        <view class="grow">
+          <view class="check__name">{{item.name}} · {{item.value}}</view>
+          <view class="tiny">{{item.tip}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部操作栏 -->
+  <view class="bar-fixed">
+    <view class="btn btn--ghost" bindtap="back">返回</view>
+    <view class="btn btn--primary grow {{freqLeft <= 0 ? 'btn--disabled' : ''}}" bindtap="openDest">
+      {{exporting ? '导出中…' : '导出成品（单张）'}}
+    </view>
+  </view>
+
+  <!-- F-ID-04 保存去向 -->
+  <view class="mask" wx:if="{{showDest}}" bindtap="closeDest">
+    <view class="sheet" catchtap="noop">
+      <view class="sheet__title">选择保存去向</view>
+      <view class="notice" style="margin-bottom: 18rpx">
+        <text>F-OUT-01</text>
+        <text class="grow">产品不建立长期作品库，未选择「保存到相册」的成品只存在于本次会话。</text>
+      </view>
+      <view class="dest" data-dest="session" bindtap="chooseDest">
+        <view class="cell__icon">◌</view>
+        <view class="grow">
+          <view class="dest__name">仅本次查看</view>
+          <view class="tiny">不落盘，关闭页面即释放</view>
+        </view>
+      </view>
+      <view class="dest" data-dest="sandbox" bindtap="chooseDest">
+        <view class="cell__icon">▤</view>
+        <view class="grow">
+          <view class="dest__name">临时暂存到沙盒</view>
+          <view class="tiny">默认 24 小时后自动清理，可随时手动清理</view>
+        </view>
+      </view>
+      <view class="dest" data-dest="album" bindtap="chooseDest">
+        <view class="cell__icon">▣</view>
+        <view class="grow">
+          <view class="dest__name">保存到系统相册</view>
+          <view class="tiny">持久保存，需相册写入授权；删除需你在相册中操作</view>
+        </view>
+      </view>
+      <view class="btn btn--ghost btn--block" style="margin-top: 20rpx" bindtap="closeDest">取消</view>
+    </view>
+  </view>
+</view>

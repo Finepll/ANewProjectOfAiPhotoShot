@@ -1,0 +1,101 @@
+<view class="camera-page">
+  <!-- 相机预览 -->
+  <view class="stage">
+    <camera
+      wx:if="{{!cameraError}}"
+      class="stage__camera"
+      device-position="{{device}}"
+      flash="off"
+      resolution="high"
+      bindinitdone="onCameraReady"
+      binderror="onCameraError"
+    ></camera>
+
+    <view class="stage__fallback" wx:else>
+      <view class="empty__ring">◎</view>
+      <view>相机不可用或无权限</view>
+      <view class="btn btn--ghost btn--sm" style="margin-top: 20rpx" bindtap="goSettings">去授权</view>
+      <view class="tiny" style="margin-top: 16rpx">也可以直接从相册导入照片</view>
+    </view>
+
+    <!-- 引导框（F-CAP-01） -->
+    <view class="guide" wx:if="{{!cameraError}}">
+      <view class="guide__thirds"></view>
+      <view class="guide__head"></view>
+      <view class="guide__shoulder"></view>
+      <view class="guide__center"></view>
+    </view>
+
+    <!-- 光线提示 -->
+    <view class="hud hud--{{lightLevel}}" wx:if="{{!cameraError}}">
+      <text class="hud__dot"></text>
+      <text>{{lightText}}</text>
+    </view>
+
+    <!-- 引导文案 -->
+    <view class="tip">{{guides[guideIndex].text}}</view>
+  </view>
+
+  <!-- 控制区 -->
+  <view class="controls">
+    <view class="ctrl hit" bindtap="importAlbum">
+      <view class="ctrl__icon">▣</view>
+      <text class="tiny">相册</text>
+    </view>
+
+    <view class="shutter-btn hit" bindtap="takePhoto">
+      <view class="shutter-btn__inner"></view>
+    </view>
+
+    <view class="ctrl hit" bindtap="switchCamera">
+      <view class="ctrl__icon">⟳</view>
+      <text class="tiny">{{device === 'front' ? '前置' : '后置'}}</text>
+    </view>
+  </view>
+
+  <view class="notice" style="margin: 0 28rpx 20rpx">
+    <text>F-CAP-01</text>
+    <text class="grow">拍摄全程在本机完成，未点击「使用这张」前不会保存任何照片。</text>
+  </view>
+
+  <!-- 质检结果（F-CAP-03） -->
+  <view class="mask" wx:if="{{showSheet}}" catchtap="retake">
+    <view class="sheet" catchtap="">
+      <view class="sheet__title">端侧质检</view>
+      <view class="shot">
+        <image wx:if="{{shotPath}}" class="shot__img" src="{{shotPath}}" mode="aspectFill"></image>
+        <view class="shot__badge" wx:if="{{!checking}}">
+          <text class="{{checkPass ? 'shot__badge--ok' : 'shot__badge--warn'}}">
+            {{checkPass ? '质检通过' : '建议重拍'}}
+          </text>
+          <text class="tiny">{{checkScore}} 分</text>
+        </view>
+      </view>
+
+      <view class="checks">
+        <view class="check" wx:for="{{checkList}}" wx:key="key">
+          <view class="check__dot check__dot--{{item.state}}"></view>
+          <view class="grow">
+            <view class="check__name">{{item.name}}</view>
+            <view class="tiny">{{item.hint || item.desc}}</view>
+          </view>
+          <text class="check__state">
+            {{item.state === 'pass' ? '通过' : item.state === 'fail' ? '不通过' : '检测中'}}
+          </text>
+        </view>
+      </view>
+
+      <view class="notice notice--cream" wx:if="{{!checking}}" style="margin-top: 8rpx">
+        <text>说明</text>
+        <text class="grow">分辨率与亮度为本机实测；人脸数量检测由端侧 SDK 输出，演示环境为模拟结果。</text>
+      </view>
+
+      <view class="sheet__actions">
+        <view class="btn btn--ghost grow" bindtap="retake">重拍 / 换一张</view>
+        <view class="btn btn--primary grow" bindtap="usePhoto">
+          {{checkPass ? '使用这张' : '仍要使用'}}
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

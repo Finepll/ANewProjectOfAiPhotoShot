@@ -1,0 +1,57 @@
+<view class="page page--flat">
+  <view class="segs">
+    <view
+      wx:for="{{tabs}}"
+      wx:key="key"
+      class="seg {{type === item.key ? 'seg--on' : ''}}"
+      data-type="{{item.key}}"
+      bindtap="switchType"
+    >{{item.name}}</view>
+  </view>
+
+  <view class="card">
+    <view class="between">
+      <view>
+        <view class="title">{{doc.name}}</view>
+        <view class="tiny">{{doc.version}} · 首次进入必须签署，未签署时拍摄与导出不可用</view>
+      </view>
+      <text class="tag {{signed ? 'tag--ink' : 'tag--tan'}}">{{signed ? '已签署' : '未签署'}}</text>
+    </view>
+    <view class="notice" style="margin-top: 18rpx">
+      <text>摘要</text>
+      <text class="grow">{{doc.intro}}</text>
+    </view>
+
+    <view class="doc">
+      <view class="doc__sec" wx:for="{{doc.sections}}" wx:key="h">
+        <view class="doc__h">{{item.h}}</view>
+        <view class="doc__p" wx:for="{{item.p}}" wx:for-item="para" wx:key="*this">{{para}}</view>
+      </view>
+    </view>
+
+    <view class="sign" wx:if="{{signed}}">
+      <view class="sign__row"><text class="sign__k">签署时间</text><text class="grow">{{signedAt}}</text></view>
+      <view class="sign__row"><text class="sign__k">凭证指纹</text><text class="grow mono">{{signHash}}</text></view>
+      <view class="sign__row"><text class="sign__k">存证内容</text><text class="grow">协议版本 + 时间 + 设备标识（不含人脸特征）</text></view>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="between">
+      <view class="title">签署与撤回</view>
+      <text class="tag">F-ACC-02</text>
+    </view>
+    <view class="tiny" style="margin-top: 10rpx">
+      签署即在服务端存证并在本机保留凭证；撤回后相关能力立即不可用，可随时重新签署。
+    </view>
+    <view class="grid-2" style="margin-top: 20rpx">
+      <view class="btn btn--ghost" bindtap="revoke">撤回授权</view>
+      <view class="btn btn--primary" bindtap="agree">{{signed ? '重新签署' : '同意并签署'}}</view>
+    </view>
+  </view>
+
+  <view class="notice" style="margin-top: 24rpx">
+    <text>红线</text>
+    <text class="grow">仅支持本人肖像；不得用于伪造证件、恶搞他人或商业侵权合成，违规由上传者承担法律责任。</text>
+  </view>
+</view>

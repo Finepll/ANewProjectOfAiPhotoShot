@@ -1,0 +1,81 @@
+{
+  "appid": "wx5d799f460a5b7160",
+  "projectname": "ai-photo-studio-miniprogram",
+  "compileType": "miniprogram",
+  "miniprogramRoot": "./",
+  "libVersion": "3.5.5",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": false,
+    "coverView": true,
+    "ignoreDevUnusedFiles": false,
+    "packNpmManually": false,
+    "skylineRenderEnable": false,
+    "useCompilerPlugins": false,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "condition": false,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
+  },
+  "condition": {
+    "miniprogram": {
+      "list": [
+        {
+          "name": "拍摄",
+          "pathName": "pages/camera/index",
+          "query": "",
+          "scene": null
+        },
+        {
+          "name": "编辑器",
+          "pathName": "pages/editor/index",
+          "query": "",
+          "scene": null
+        },
+        {
+          "name": "证件照",
+          "pathName": "pages/idphoto/index",
+          "query": "",
+          "scene": null
+        },
+        {
+          "name": "成品导出",
+          "pathName": "pages/result/index",
+          "query": "",
+          "scene": null
+        },
+        {
+          "name": "会员橱窗",
+          "pathName": "pages/member/index",
+          "query": "",
+          "scene": null
+        },
+        {
+          "name": "登录授权",
+          "pathName": "pages/login/index",
+          "query": "",
+          "scene": null
+        }
+      ]
+    }
+  },
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "editorSetting": {}
+}

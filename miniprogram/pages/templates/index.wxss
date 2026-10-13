@@ -1,0 +1,181 @@
+.cats {
+  width: 100%;
+  white-space: nowrap;
+}
+
+.cats__track {
+  display: flex;
+  gap: 16rpx;
+  padding: 4rpx 0 8rpx;
+}
+
+.cat {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 16rpx 26rpx;
+  border-radius: 999rpx;
+  background: var(--c-card);
+  color: var(--c-ink-2);
+  box-shadow: var(--shadow);
+  transition: all 0.2s ease;
+}
+
+.cat--on {
+  background: var(--c-ink);
+  color: var(--c-cream);
+}
+
+.cat__name {
+  font-size: 27rpx;
+}
+
+.cat__count {
+  font-size: 20rpx;
+  opacity: 0.7;
+}
+
+/* ---------- 影棚模板 ---------- */
+.studio__cover {
+  position: relative;
+  height: 300rpx;
+  border-radius: 20rpx;
+  overflow: hidden;
+}
+
+.studio__light {
+  position: absolute;
+  left: 14rpx;
+  bottom: 14rpx;
+  font-size: 19rpx;
+  padding: 4rpx 14rpx;
+  border-radius: 999rpx;
+  background: rgba(252, 247, 223, 0.85);
+  color: #3e3630;
+}
+
+.studio__hot {
+  position: absolute;
+  right: 14rpx;
+  top: 14rpx;
+  font-size: 19rpx;
+  padding: 4rpx 14rpx;
+  border-radius: 999rpx;
+  background: rgba(62, 54, 48, 0.72);
+  color: #fcf7df;
+}
+
+.studio__name {
+  margin-top: 14rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.studio__tags {
+  margin-top: 10rpx;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  flex-wrap: wrap;
+}
+
+/* ---------- 规格 ---------- */
+.spec {
+  margin-top: 20rpx;
+}
+
+.spec__badge {
+  width: 12rpx;
+  height: 56rpx;
+  border-radius: 8rpx;
+}
+
+.spec__name {
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.spec__meta {
+  margin-top: 16rpx;
+  display: flex;
+  gap: 10rpx;
+  flex-wrap: wrap;
+}
+
+/* ---------- 风格包 ---------- */
+.theme__preview {
+  height: 210rpx;
+  border-radius: 20rpx;
+}
+
+.theme__preview--0 {
+  background: linear-gradient(140deg, #f3e3ce, #c9a882);
+}
+.theme__preview--1 {
+  background: linear-gradient(140deg, #fbeee2, #d9a88c);
+}
+.theme__preview--2 {
+  background: linear-gradient(140deg, #e3ecf1, #9fb3bf);
+}
+.theme__preview--3 {
+  background: linear-gradient(140deg, #e6e2dc, #6f665c);
+}
+.theme__preview--4 {
+  background: linear-gradient(140deg, #ece6de, #a79a8a);
+}
+.theme__preview--5 {
+  background: repeating-linear-gradient(45deg, #c7d3db 0 12rpx, #a79a8a 12rpx 24rpx);
+}
+.theme__preview--6 {
+  background: linear-gradient(140deg, #fcf7df, #e0d6c4);
+}
+.theme__preview--7 {
+  background: linear-gradient(140deg, #d8dee2, #3e3630);
+}
+
+.theme__name {
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+/* ---------- 贴纸 ---------- */
+.packs {
+  width: 100%;
+  white-space: nowrap;
+  margin-top: 20rpx;
+}
+
+.packs__track {
+  display: flex;
+  gap: 14rpx;
+}
+
+.pack {
+  flex: none;
+  padding: 12rpx 24rpx;
+  border-radius: 999rpx;
+  background: var(--c-card);
+  font-size: 25rpx;
+  color: var(--c-ink-2);
+  transition: all 0.2s ease;
+}
+
+.pack--on {
+  background: var(--c-blue);
+  color: var(--c-ink);
+  font-weight: 600;
+}
+
+.sticker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+}
+
+.sticker__text {
+  font-size: 44rpx;
+  line-height: 1.3;
+  text-align: center;
+}

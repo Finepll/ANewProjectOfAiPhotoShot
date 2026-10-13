@@ -1,0 +1,129 @@
+<view class="page">
+  <!-- 顶部策略说明 -->
+  <view class="card head">
+    <view class="between">
+      <view>
+        <view class="title">导出记录</view>
+        <view class="tiny">只记元信息 · 不留图片副本</view>
+      </view>
+      <view class="freq">
+        <view class="freq__num">{{freqLeft}}</view>
+        <view class="tiny">今日剩余频次</view>
+      </view>
+    </view>
+    <view class="notice" style="margin-top: 18rpx">
+      <text>F-OUT-01</text>
+      <text class="grow">产品不建立长期作品库：记录里没有图片、缩略图或人脸数据，只有时间、版式、去向与是否已存入相册。</text>
+    </view>
+  </view>
+
+  <!-- 分段 -->
+  <view class="segs">
+    <view class="seg {{tab === 'records' ? 'seg--on' : ''}}" data-tab="records" bindtap="switchTab">导出记录 {{records.length}}</view>
+    <view class="seg {{tab === 'sandbox' ? 'seg--on' : ''}}" data-tab="sandbox" bindtap="switchTab">临时暂存</view>
+  </view>
+
+  <!-- 导出记录 -->
+  <block wx:if="{{tab === 'records'}}">
+    <view class="card card--tight" wx:if="{{records.length}}">
+      <view class="cell" wx:for="{{records}}" wx:key="id" data-id="{{item.id}}" bindtap="openDetail">
+        <view class="rec">
+          <text class="rec__text">{{item.type === 'idphoto' ? '证件' : '影棚'}}</text>
+        </view>
+        <view class="grow">
+          <view class="rec__title ellipsis">{{item.title}}</view>
+          <view class="tiny ellipsis">{{item.layout || item.spec || ''}} · {{item.createdAt}}</view>
+          <view class="rec__tags">
+            <text class="tag {{item.savedToAlbum ? 'tag--ink' : 'tag--tan'}}">{{item.destText || item.source}}</text>
+            <text class="tag" wx:if="{{item.demo}}">演示记录</text>
+          </view>
+        </view>
+        <text class="rec__del" data-id="{{item.id}}" catchtap="removeRecord">删除</text>
+      </view>
+      <view class="btn btn--ghost btn--block" style="margin-top: 20rpx" bindtap="clearRecords">清空记录</view>
+    </view>
+
+    <view class="card empty" wx:else>
+      <view class="empty__ring">▤</view>
+      <text>还没有导出记录</text>
+      <text class="tiny">拍一张 → 导出时选择去向，这里就会出现一条元信息记录</text>
+      <view class="btn btn--primary btn--sm" style="margin-top: 12rpx" bindtap="goCamera">去拍一张</view>
+    </view>
+  </block>
+
+  <!-- 临时暂存 / 沙盒 -->
+  <block wx:else>
+    <view class="card">
+      <view class="between">
+        <view class="title">沙盒工作区</view>
+        <text class="tag tag--tan">F-ACC-03</text>
+      </view>
+      <view class="stat-grid">
+        <view class="stat">
+          <view class="stat__num">{{storage.size}}</view>
+          <view class="tiny">键值存储占用</view>
+        </view>
+        <view class="stat">
+          <view class="stat__num">{{storage.keys}}</view>
+          <view class="tiny">存储条目</view>
+        </view>
+        <view class="stat">
+          <view class="stat__num">{{cache.temp}}</view>
+          <view class="tiny">暂存工程</view>
+        </view>
+        <view class="stat">
+          <view class="stat__num">{{cache.models}}</view>
+          <view class="tiny">模型缓存</view>
+        </view>
+      </view>
+      <view class="notice" style="margin-top: 18rpx">
+        <text>规则</text>
+        <text class="grow">沙盒随时可能被系统回收，只作为临时工作区；临时文件默认 24 小时后自动清理，不提示「已安全保存」。</text>
+      </view>
+      <view class="grid-2" style="margin-top: 20rpx">
+        <view class="btn btn--ghost" bindtap="cleanDrafts">清理暂存工程</view>
+        <view class="btn btn--primary" bindtap="cleanTemp">一键清理临时文件</view>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="between">
+        <view class="title">暂存工程</view>
+        <text class="tiny">只存参数与素材引用，不含原图</text>
+      </view>
+      <view class="draft" wx:for="{{drafts}}" wx:key="id">
+        <view class="cell__icon">▦</view>
+        <view class="grow">
+          <view class="rec__title">工程 {{item.id}}</view>
+          <view class="tiny">{{item.createdAt}} · 缩放 {{item.zoom}} · 虚化 {{item.blur}}</view>
+        </view>
+        <text class="rec__del" data-id="{{item.id}}" bindtap="removeDraft">删除</text>
+      </view>
+      <view class="empty" wx:if="{{!drafts.length}}">
+        <text class="tiny">没有暂存工程；编辑器里点「暂存」才会写入，默认 24 小时过期</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- 记录详情 -->
+  <view class="mask" wx:if="{{showDetail}}" bindtap="closeDetail">
+    <view class="sheet" catchtap="noop">
+      <view class="sheet__title">{{detail.title}}</view>
+      <view class="meta">
+        <view class="meta__row"><text class="meta__k">版式</text><text class="grow">{{detail.layout || detail.spec || '—'}}</text></view>
+        <view class="meta__row"><text class="meta__k">保存去向</text><text class="grow">{{detail.destText || detail.source}}</text></view>
+        <view class="meta__row"><text class="meta__k">导出时间</text><text class="grow">{{detail.createdAt}}</text></view>
+        <view class="meta__row"><text class="meta__k">已入相册</text><text class="grow">{{detail.savedToAlbum ? '是' : '否'}}</text></view>
+        <view class="meta__row"><text class="meta__k">图片副本</text><text class="grow">不保留</text></view>
+      </view>
+      <view class="notice" style="margin-top: 18rpx">
+        <text>提示</text>
+        <text class="grow">需要再次拿到成品，请重新拍摄或重新生成；记录本身不携带任何照片数据。</text>
+      </view>
+      <view class="grid-2" style="margin-top: 22rpx">
+        <view class="btn btn--ghost" bindtap="closeDetail">关闭</view>
+        <view class="btn btn--primary" bindtap="goCameraAgain">重拍一张</view>
+      </view>
+    </view>
+  </view>
+</view>

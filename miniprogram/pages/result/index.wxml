@@ -1,0 +1,125 @@
+<view class="page page--flat">
+  <view class="between">
+    <view class="grow">
+      <view class="title ellipsis">{{title}}</view>
+      <view class="tiny">{{subtitle}}</view>
+    </view>
+    <text class="tag {{mode === 'record' ? 'tag--tan' : 'tag--ink'}}">{{mode === 'record' ? '导出记录（无图片）' : '本次会话'}}</text>
+  </view>
+
+  <!-- 成品预览 -->
+  <view class="preview" wx:if="{{tempFilePath}}">
+    <image class="preview__img" src="{{tempFilePath}}" mode="widthFix" show-menu-by-longpress="{{true}}" />
+  </view>
+
+  <!-- 记录模式：不保留图片 -->
+  <view class="card" wx:else>
+    <view class="empty">
+      <view class="empty__ring">▤</view>
+      <text>这是一条导出记录，产品不保留图片副本</text>
+      <text class="tiny">记录只保存时间、版式、去向与是否已存入相册</text>
+    </view>
+    <view class="meta">
+      <view class="meta__row"><text class="meta__k">版式</text><text class="grow">{{record.layout || record.title}}</text></view>
+      <view class="meta__row"><text class="meta__k">去向</text><text class="grow">{{record.destText || '—'}}</text></view>
+      <view class="meta__row"><text class="meta__k">时间</text><text class="grow">{{record.createdAt}}</text></view>
+      <view class="meta__row"><text class="meta__k">是否入相册</text><text class="grow">{{record.savedToAlbum ? '已保存' : '未保存'}}</text></view>
+    </view>
+    <view class="notice" style="margin-top: 18rpx">
+      <text>F-OUT-01</text>
+      <text class="grow">需要重新拿到这份成品，请重新拍摄或重新生成；沙盒随时可能被清理，因此不提示「已安全保存」。</text>
+    </view>
+    <view class="btn btn--primary btn--block" style="margin-top: 20rpx" bindtap="retake">重新拍一张</view>
+  </view>
+
+  <!-- 保存去向 -->
+  <view class="card" wx:if="{{tempFilePath}}">
+    <view class="between">
+      <view class="title">保存去向</view>
+      <text class="tag">F-OUT-01</text>
+    </view>
+    <view class="tiny" style="margin-top: 10rpx">产品不建立长期作品库，未入相册的成品只存在于本次会话或 24 小时临时暂存。</view>
+    <view class="grid-2" style="margin-top: 20rpx">
+      <view class="btn btn--primary" bindtap="saveToAlbum">{{saving ? '保存中…' : '保存到相册'}}</view>
+      <view class="btn btn--ghost" bindtap="keepSandbox">临时暂存 24 小时</view>
+    </view>
+    <view class="grid-2" style="margin-top: 16rpx">
+      <view class="btn btn--blue" bindtap="openBatch">一次拍摄 · 多份交付</view>
+      <view class="btn btn--ghost" bindtap="editAgain">继续编辑</view>
+    </view>
+  </view>
+
+  <!-- F-OUT-02 多份交付结果 -->
+  <view class="card" wx:if="{{batchResults.length}}">
+    <view class="between">
+      <view class="title">本次批量交付</view>
+      <text class="tag tag--tan">{{batchResults.length}} 份</text>
+    </view>
+    <view class="deliver" wx:for="{{batchResults}}" wx:key="key" data-path="{{item.tempFilePath}}" bindtap="previewBatch">
+      <view class="deliver__thumb">
+        <image class="deliver__img" src="{{item.tempFilePath}}" mode="aspectFill" />
+      </view>
+      <view class="grow">
+        <view class="deliver__name">{{item.name}}</view>
+        <view class="tiny">{{item.desc}}</view>
+      </view>
+      <text class="cell__arrow">预览 ›</text>
+    </view>
+    <view class="btn btn--primary btn--block" style="margin-top: 20rpx" bindtap="saveBatchAll">
+      {{saving ? '保存中…' : '全部保存到相册'}}
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="between">
+      <view class="title">还可以做什么</view>
+      <text class="tag">F-CLD</text>
+    </view>
+    <view class="cell" bindtap="goRecords">
+      <view class="cell__icon">▤</view>
+      <view class="grow">
+        <view class="deliver__name">查看导出记录与临时暂存</view>
+        <view class="tiny">记录只含元信息，随时可一键清理</view>
+      </view>
+      <text class="cell__arrow">›</text>
+    </view>
+    <view class="cell" bindtap="retake">
+      <view class="cell__icon">◎</view>
+      <view class="grow">
+        <view class="deliver__name">换一张照片重拍</view>
+        <view class="tiny">2D 引导 · 端侧质检，不消耗额度</view>
+      </view>
+      <text class="cell__arrow">›</text>
+    </view>
+  </view>
+
+  <view class="notice" style="margin-top: 24rpx">
+    <text>合规</text>
+    <text class="grow">成品仅供本人使用；如用于他人肖像合成，将由你承担相应法律责任。</text>
+  </view>
+
+  <!-- 多份交付清单 -->
+  <view class="mask" wx:if="{{showBatch}}" bindtap="closeBatch">
+    <view class="sheet" catchtap="noop">
+      <view class="sheet__title">一次拍摄 · 多份交付</view>
+      <view class="tiny" style="margin-bottom: 12rpx">勾选后批量渲染，保存去向统一选择；拼版只在此处生成（F-OUT-02）。</view>
+      <view class="batch-item {{item.checked ? 'batch-item--on' : ''}}" wx:for="{{batchItems}}" wx:key="key" data-key="{{item.key}}" bindtap="toggleBatchItem">
+        <view class="checkbox">{{item.checked ? '✓' : ''}}</view>
+        <view class="grow">
+          <view class="deliver__name">{{item.name}}</view>
+          <view class="tiny">{{item.desc}}</view>
+        </view>
+      </view>
+      <view class="notice" style="margin-top: 16rpx">
+        <text>规则</text>
+        <text class="grow">多份交付是一次渲染的多个输出，不按份重复计费；其中生成的证件照仍计入每日频次。</text>
+      </view>
+      <view class="btn btn--primary btn--block" style="margin-top: 22rpx" bindtap="generateBatch">
+        {{generating ? '渲染中…' : '开始生成'}}
+      </view>
+    </view>
+  </view>
+
+  <!-- 离屏拼版画布 -->
+  <canvas id="batch" type="2d" class="offscreen"></canvas>
+</view>

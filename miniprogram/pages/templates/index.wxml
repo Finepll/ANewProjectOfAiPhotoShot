@@ -1,0 +1,128 @@
+<view class="page">
+  <scroll-view class="cats" scroll-x enable-flex show-scrollbar="{{false}}">
+    <view class="cats__track">
+      <view
+        wx:for="{{categories}}"
+        wx:key="key"
+        class="cat {{active === item.key ? 'cat--on' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="switchCategory"
+      >
+        <text class="cat__name">{{item.name}}</text>
+        <text class="cat__count">{{item.count}}</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 影棚背景 -->
+  <block wx:if="{{active === 'studio'}}">
+    <view class="notice">
+      <text>F-STU-01</text>
+      <text class="grow">选中模板后可一键套用，人像层支持缩放、位移与虚化调整。</text>
+    </view>
+
+    <view class="grid-2" style="margin-top: 22rpx">
+      <view
+        wx:for="{{studios}}"
+        wx:key="id"
+        class="card card--tight studio hit"
+        data-id="{{item.id}}"
+        bindtap="useStudio"
+      >
+        <view class="studio__cover" style="background: linear-gradient(140deg, {{item.bg.from}}, {{item.bg.to}})">
+          <text class="studio__light">{{item.light}}</text>
+          <text wx:if="{{item.hot}}" class="studio__hot">热门</text>
+        </view>
+        <view class="studio__name">{{item.name}}</view>
+        <view class="tiny">{{item.scene}}</view>
+        <view class="studio__tags">
+          <text wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this" class="tag">{{tag}}</text>
+          <text class="tiny">{{item.size}}</text>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 证件照规格 -->
+  <block wx:if="{{active === 'spec'}}">
+    <view class="notice">
+      <text>F-ID-01</text>
+      <text class="grow">按用途智能推荐规格，选中后进入证件照工作台做抠图换底与自动裁切。</text>
+    </view>
+
+    <view
+      wx:for="{{specs}}"
+      wx:key="id"
+      class="card card--tight spec hit"
+      data-id="{{item.id}}"
+      bindtap="useSpec"
+    >
+      <view class="between">
+        <view class="row" style="gap: 18rpx">
+          <view class="spec__badge" style="background: {{item.tone}}"></view>
+          <view>
+            <view class="spec__name">{{item.name}}</view>
+            <view class="tiny">{{item.mm}} · {{item.px}}</view>
+          </view>
+        </view>
+        <view class="cell__arrow">›</view>
+      </view>
+      <view class="spec__meta">
+        <text class="tag tag--tan">头部占比 {{item.headRatio}}</text>
+        <text wx:for="{{item.usage}}" wx:for-item="use" wx:key="*this" class="tag">{{use}}</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- 主题风格包 -->
+  <block wx:if="{{active === 'theme'}}">
+    <view class="notice">
+      <text>F-EDT-02</text>
+      <text class="grow">风格包在本机端侧应用，不上传照片；像素风与柔焦为端侧实时效果。</text>
+    </view>
+
+    <view class="grid-2" style="margin-top: 22rpx">
+      <view wx:for="{{themes}}" wx:key="id" class="card card--tight theme hit" data-id="{{item.id}}" bindtap="useTheme">
+        <view class="theme__preview theme__preview--{{index}}"></view>
+        <view class="between" style="margin-top: 14rpx">
+          <text class="theme__name">{{item.name}}</text>
+          <text class="tag">{{item.tag}}</text>
+        </view>
+        <view class="tiny">{{item.desc}}</view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 贴纸 -->
+  <block wx:if="{{active === 'sticker'}}">
+    <view class="notice">
+      <text>F-EDT-01</text>
+      <text class="grow">贴纸与文字可拖动摆放，导出时按画布比例合成。</text>
+    </view>
+
+    <scroll-view class="packs" scroll-x enable-flex show-scrollbar="{{false}}">
+      <view class="packs__track">
+        <view
+          wx:for="{{stickerPacks}}"
+          wx:key="*this"
+          class="pack {{activePack === item ? 'pack--on' : ''}}"
+          data-pack="{{item}}"
+          bindtap="switchPack"
+        >{{item}}</view>
+      </view>
+    </scroll-view>
+
+    <view class="grid-3" style="margin-top: 18rpx">
+      <view
+        wx:for="{{visibleStickers}}"
+        wx:key="id"
+        class="card card--tight sticker hit"
+        data-id="{{item.id}}"
+        bindtap="tapSticker"
+      >
+        <view class="sticker__text">{{item.text}}</view>
+        <view class="tiny">{{item.pack}}</view>
+      </view>
+    </view>
+  </block>
+</view>

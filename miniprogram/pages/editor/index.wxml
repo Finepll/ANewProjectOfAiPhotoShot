@@ -1,0 +1,240 @@
+<view class="page page--flat editor">
+  <!-- 画布区 -->
+  <view class="stage-wrap">
+    <canvas
+      id="stage"
+      type="2d"
+      class="stage"
+      bindtouchstart="onTouchStart"
+      bindtouchmove="onTouchMove"
+    ></canvas>
+    <view class="stage__hint" wx:if="{{ready}}">
+      <text class="tag tag--ink">{{dragTarget === 'sticker' ? '拖动贴纸' : '拖动人像'}}</text>
+      <text class="tiny">双指缩放请用下方滑块</text>
+    </view>
+    <view class="stage__loading" wx:if="{{!ready}}">画布准备中…</view>
+  </view>
+
+  <!-- 顶部快捷区 -->
+  <view class="card">
+    <view class="between">
+      <view>
+        <view class="title">{{template.name}}</view>
+        <view class="tiny">{{template.scene}} · {{activeTheme.name}}</view>
+      </view>
+      <view class="row" style="gap: 12rpx">
+        <text class="tag tag--tan" bindtap="openLayerSheet">图层</text>
+        <text class="tag" bindtap="openStickerSheet">贴纸</text>
+      </view>
+    </view>
+
+    <!-- 风格包（F-EDT-02） -->
+    <scroll-view class="themes" scroll-x enable-flex show-scrollbar="{{false}}">
+      <view class="themes__track">
+        <view
+          wx:for="{{themePacks}}"
+          wx:key="id"
+          class="theme-chip {{activeTheme.id === item.id ? 'theme-chip--on' : ''}}"
+          data-id="{{item.id}}"
+          bindtap="pickTheme"
+        >{{item.name}}</view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 人像层变换（F-STU-03） -->
+  <view class="card">
+    <view class="between">
+      <view class="section-title__main">人像层变换</view>
+      <view class="row" style="gap: 10rpx">
+        <text class="tag {{dragTarget === 'person' ? 'tag--ink' : ''}}" bindtap="usePersonDrag">选中人像</text>
+        <text class="tag" bindtap="resetPerson">重置</text>
+      </view>
+    </view>
+
+    <view class="slider">
+      <text class="slider__label">缩放</text>
+      <slider
+        class="grow"
+        min="60"
+        max="180"
+        value="{{zoom * 100}}"
+        activeColor="#3E3630"
+        backgroundColor="#E5ECF1"
+        block-color="#A79A8A"
+        block-size="20"
+        bindchanging="onZoom"
+      />
+      <text class="slider__val">{{zoom}}</text>
+    </view>
+    <view class="slider">
+      <text class="slider__label">左右</text>
+      <slider
+        class="grow"
+        min="-60"
+        max="60"
+        value="{{offsetX * 100}}"
+        activeColor="#3E3630"
+        backgroundColor="#E5ECF1"
+        block-color="#A79A8A"
+        block-size="20"
+        bindchanging="onOffsetX"
+      />
+      <text class="slider__val">{{offsetX}}</text>
+    </view>
+    <view class="slider">
+      <text class="slider__label">上下</text>
+      <slider
+        class="grow"
+        min="-50"
+        max="50"
+        value="{{offsetY * 100}}"
+        activeColor="#3E3630"
+        backgroundColor="#E5ECF1"
+        block-color="#A79A8A"
+        block-size="20"
+        bindchanging="onOffsetY"
+      />
+      <text class="slider__val">{{offsetY}}</text>
+    </view>
+    <view class="slider">
+      <text class="slider__label">抠图羽化</text>
+      <slider
+        class="grow"
+        min="0"
+        max="60"
+        value="{{feather * 100}}"
+        activeColor="#3E3630"
+        backgroundColor="#E5ECF1"
+        block-color="#A79A8A"
+        block-size="20"
+        bindchanging="onFeather"
+      />
+      <text class="slider__val">{{feather}}</text>
+    </view>
+
+    <view class="notice" style="margin-top: 8rpx">
+      <text>F-ID-02</text>
+      <text class="grow">人像分割由端侧模型输出 alpha 通道，演示环境使用椭圆羽化近似，接口一致。</text>
+    </view>
+  </view>
+
+  <!-- 背景虚化与调焦（F-STU-04） -->
+  <view class="card">
+    <view class="section-title__main">背景虚化与调焦</view>
+    <view class="slider" style="margin-top: 12rpx">
+      <text class="slider__label">虚化</text>
+      <slider
+        class="grow"
+        min="0"
+        max="100"
+        value="{{blur * 10}}"
+        activeColor="#3E3630"
+        backgroundColor="#E5ECF1"
+        block-color="#A79A8A"
+        block-size="20"
+        bindchanging="onBlur"
+      />
+      <text class="slider__val">{{blur}}</text>
+    </view>
+    <view class="tiny">虚化只作用于背景层，人像层保持锐利，形成景深效果。</view>
+  </view>
+
+  <!-- 贴纸列表 -->
+  <view class="card" wx:if="{{stickers.length}}">
+    <view class="between">
+      <view class="section-title__main">已添加元素</view>
+      <text class="tag" bindtap="openStickerSheet">+ 添加</text>
+    </view>
+    <view class="sticker-list">
+      <view
+        wx:for="{{stickers}}"
+        wx:key="index"
+        class="sticker-item {{selectedSticker === item.id ? 'sticker-item--on' : ''}}"
+        data-id="{{item.id}}"
+        bindtap="selectSticker"
+      >
+        <text class="sticker-item__text">{{item.text}}</text>
+        <text class="sticker-item__del" data-id="{{item.id}}" catchtap="removeSticker">✕</text>
+      </view>
+    </view>
+    <view class="tiny">选中后可拖动摆放，再点一次画布即可停止框选。</view>
+  </view>
+
+  <!-- 底部操作条 -->
+  <view class="actions">
+    <view class="btn btn--ghost btn--sm" bindtap="saveDraft">暂存</view>
+    <view class="btn btn--blue btn--sm" bindtap="runPipeline">智能编排</view>
+    <view class="btn btn--primary grow {{exporting ? 'btn--disabled' : ''}}" bindtap="exportImage">
+      {{exporting ? '导出中…' : '导出成品'}}
+    </view>
+  </view>
+
+  <!-- 贴纸选择 -->
+  <view class="mask" wx:if="{{showStickerSheet}}" catchtap="closeStickerSheet">
+    <view class="sheet" catchtap="">
+      <view class="sheet__title">贴纸与文字</view>
+      <scroll-view class="packs" scroll-x enable-flex show-scrollbar="{{false}}">
+        <view class="packs__track">
+          <view
+            wx:for="{{stickerPacks}}"
+            wx:key="*this"
+            class="pack {{activePack === item ? 'pack--on' : ''}}"
+            data-pack="{{item}}"
+            bindtap="switchPack"
+          >{{item}}</view>
+        </view>
+      </scroll-view>
+      <view class="lib">
+        <view
+          wx:for="{{visibleStickers}}"
+          wx:key="id"
+          class="lib__item"
+          data-id="{{item.id}}"
+          bindtap="addSticker"
+        >
+          <text class="lib__text">{{item.text}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 图层管理 -->
+  <view class="mask" wx:if="{{showLayerSheet}}" catchtap="closeLayerSheet">
+    <view class="sheet" catchtap="">
+      <view class="sheet__title">图层管理</view>
+      <view class="layer" wx:for="{{layers}}" wx:key="key">
+        <view class="layer__dot {{item.visible ? '' : 'layer__dot--off'}}"></view>
+        <view class="grow">
+          <view class="layer__name">{{item.name}}</view>
+          <view class="tiny">{{item.visible ? '显示中' : '已隐藏'}}</view>
+        </view>
+        <text class="layer__op" data-key="{{item.key}}" data-dir="-1" bindtap="moveLayer">上移</text>
+        <text class="layer__op" data-key="{{item.key}}" data-dir="1" bindtap="moveLayer">下移</text>
+        <text class="layer__op" data-key="{{item.key}}" bindtap="toggleLayer">{{item.visible ? '隐藏' : '显示'}}</text>
+      </view>
+      <view class="tiny" style="margin-top: 10rpx">人像层与贴纸层的上下顺序决定遮挡关系。</view>
+    </view>
+  </view>
+
+  <!-- 编排进度（F-STU-02） -->
+  <view class="mask" wx:if="{{showPipeline}}">
+    <view class="sheet">
+      <view class="sheet__title">多模型能力编排</view>
+      <view class="tiny">大模型中枢拆解需求 → 生成能力 DAG → 依次调用底层模型</view>
+      <view class="bar" style="margin: 22rpx 0 18rpx">
+        <view class="bar__inner" style="width: {{pipelinePercent}}%"></view>
+      </view>
+      <view class="pipe" wx:for="{{pipeline}}" wx:key="key">
+        <view class="pipe__dot pipe__dot--{{item.state}}"></view>
+        <view class="grow">
+          <view class="pipe__title">{{item.title}}</view>
+          <view class="tiny">{{item.desc}}</view>
+        </view>
+        <text class="pipe__state">
+          {{item.state === 'done' ? '完成' : item.state === 'run' ? '执行中' : '排队'}}
+        </text>
+      </view>
+    </view>
+  </view>
+</view>

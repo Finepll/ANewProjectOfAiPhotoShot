@@ -1,0 +1,94 @@
+.login {
+  padding-top: 60rpx;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 40rpx;
+}
+
+.brand__logo {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 44rpx;
+  background: linear-gradient(150deg, var(--c-blue), var(--c-tan));
+  color: var(--c-cream);
+  font-size: 62rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow);
+}
+
+.brand__title {
+  font-size: 42rpx;
+  font-weight: 600;
+  letter-spacing: 2rpx;
+}
+
+.brand__sub {
+  font-size: 23rpx;
+  color: var(--c-ink-2);
+}
+
+.send {
+  flex: none;
+  padding: 14rpx 26rpx;
+  border-radius: 999rpx;
+  background: var(--c-ink);
+  color: var(--c-cream);
+  font-size: 24rpx;
+  transition: opacity 0.16s ease;
+}
+
+.send--off {
+  background: var(--c-blue-soft);
+  color: var(--c-ink-3);
+}
+
+.agree {
+  display: flex;
+  gap: 16rpx;
+  align-items: flex-start;
+  margin-top: 24rpx;
+}
+
+.checkbox {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 12rpx;
+  border: 2rpx solid var(--c-tan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26rpx;
+  color: var(--c-cream);
+  flex: none;
+  transition: all 0.16s ease;
+}
+
+.checkbox--on {
+  background: var(--c-ink);
+  border-color: var(--c-ink);
+}
+
+.agree__text {
+  font-size: 24rpx;
+  color: var(--c-ink-2);
+}
+
+.agree__link {
+  font-size: 24rpx;
+  color: var(--c-ink);
+  text-decoration: underline;
+}
+
+.rule {
+  font-size: 24rpx;
+  color: var(--c-ink-2);
+  line-height: 1.75;
+  margin-top: 14rpx;
+}

@@ -1,0 +1,159 @@
+<view class="page page--flat">
+  <view class="segs">
+    <view class="seg {{tab === 'benefit' ? 'seg--on' : ''}}" data-tab="benefit" bindtap="switchTab">会员权益</view>
+    <view class="seg {{tab === 'orders' ? 'seg--on' : ''}}" data-tab="orders" bindtap="switchTab">订单账单</view>
+    <view class="seg {{tab === 'refund' ? 'seg--on' : ''}}" data-tab="refund" bindtap="switchTab">退款售后</view>
+  </view>
+
+  <!-- F-PAY-03 权益与到期 -->
+  <block wx:if="{{tab === 'benefit'}}">
+    <view class="card banner {{member.active ? 'banner--on' : ''}}">
+      <view class="between">
+        <view>
+          <view class="banner__title">{{member.active ? member.planName : '未开通会员'}}</view>
+          <view class="banner__sub">{{member.active ? '有效期至 ' + member.expireAt + '（剩余 ' + daysLeft + ' 天）' : '端侧能力免费，会员解锁云增强'}}</view>
+        </view>
+        <view class="banner__quota">
+          <view class="banner__num">{{quota}}</view>
+          <view class="tiny">云增强剩余</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="notice notice--cream" wx:if="{{expiring}}">
+      <text>到期提醒</text>
+      <text class="grow">会员将在 {{daysLeft}} 天后到期，到期后云增强与高清导出权益回收；续费按剩余价值折算。</text>
+    </view>
+
+    <view class="card" wx:if="{{member.active}}">
+      <view class="between">
+        <view class="title">权益明细</view>
+        <text class="tiny">可追溯到订单 {{member.orderId || '—'}}</text>
+      </view>
+      <view class="draft" wx:for="{{member.benefits}}" wx:key="*this">
+        <view class="cell__icon">✓</view>
+        <view class="grow">
+          <view class="board__name">{{item}}</view>
+        </view>
+      </view>
+      <view class="grid-2" style="margin-top: 20rpx">
+        <view class="btn btn--ghost" bindtap="goMember">续费 / 升级</view>
+        <view class="btn btn--primary" data-tab="orders" bindtap="switchTab">查看订单</view>
+      </view>
+    </view>
+
+    <view class="card" wx:else>
+      <view class="empty">
+        <view class="empty__ring">◇</view>
+        <text>还没有会员权益</text>
+        <text class="tiny">会员只卖云增强次数与模型档位，端侧保持免费</text>
+      </view>
+      <view class="btn btn--primary btn--block" bindtap="goMember">去开通</view>
+    </view>
+  </block>
+
+  <!-- F-PAY-04 订单与账单 -->
+  <block wx:elif="{{tab === 'orders'}}">
+    <scroll-view scroll-x class="filters" enable-flex show-scrollbar="{{false}}">
+      <view class="filters__track">
+        <view
+          wx:for="{{filters}}"
+          wx:key="*this"
+          class="chip {{filter === item ? 'chip--on' : ''}}"
+          data-filter="{{item}}"
+          bindtap="setFilter"
+        >{{item}}</view>
+      </view>
+    </scroll-view>
+
+    <view class="card card--tight" wx:if="{{filtered.length}}">
+      <view class="order" wx:for="{{filtered}}" wx:key="id">
+        <view class="between">
+          <view class="order__name">{{item.planName}}</view>
+          <text class="tag {{item.status === '已支付' ? 'tag--ink' : item.status === '已退款' ? 'tag--tan' : ''}}">{{item.status}}</text>
+        </view>
+        <view class="order__row"><text class="order__k">订单号</text><text class="grow mono">{{item.id}}</text></view>
+        <view class="order__row"><text class="order__k">金额</text><text class="grow">¥{{item.amount}}</text></view>
+        <view class="order__row"><text class="order__k">渠道流水号</text><text class="grow mono">{{item.tradeNo || '-'}}</text></view>
+        <view class="order__row"><text class="order__k">下单时间</text><text class="grow">{{item.createdAt}}</text></view>
+        <view class="order__row" wx:if="{{item.refundStatus}}"><text class="order__k">退款状态</text><text class="grow">{{item.refundStatus}}</text></view>
+        <view class="order__ops">
+          <text class="op" wx:if="{{item.status === '待支付'}}" data-id="{{item.id}}" bindtap="continuePay">继续支付</text>
+          <text class="op" wx:if="{{item.status === '待支付'}}" data-id="{{item.id}}" bindtap="cancelOrder">关闭订单</text>
+          <text class="op" wx:if="{{item.status === '已支付'}}" data-id="{{item.id}}" bindtap="openRefund">申请退款</text>
+          <text class="op op--mute" wx:if="{{item.status === '已支付'}}">权益已到账</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="card empty" wx:else>
+      <view class="empty__ring">▤</view>
+      <text>没有符合条件的订单</text>
+      <text class="tiny">账单只展示金额与权益计数，不含任何图片或人脸数据</text>
+    </view>
+  </block>
+
+  <!-- F-PAY-05 退款售后 -->
+  <block wx:else>
+    <view class="card">
+      <view class="between">
+        <view class="title">可退款订单</view>
+        <text class="tag">F-PAY-05</text>
+      </view>
+      <view class="tiny" style="margin-top: 8rpx">可退条件：订单已支付、权益未消费、且在后台配置的可退期内。提交后同步回收未消费权益。</view>
+      <view class="draft" wx:for="{{orders}}" wx:key="id" wx:if="{{item.status === '已支付'}}">
+        <view class="cell__icon">¥</view>
+        <view class="grow">
+          <view class="board__name">{{item.planName}} · ¥{{item.amount}}</view>
+          <view class="tiny mono">{{item.id}} · {{item.createdAt}}</view>
+        </view>
+        <text class="op" data-id="{{item.id}}" bindtap="openRefund">申请退款</text>
+      </view>
+      <view class="empty" wx:if="{{!orders.length}}">
+        <text class="tiny">暂无订单</text>
+      </view>
+    </view>
+
+    <view class="card" wx:for="{{orders}}" wx:key="id" wx:if="{{item.status === '已退款' || item.status === '退款中'}}">
+      <view class="between">
+        <view class="board__name">{{item.planName}} · ¥{{item.amount}}</view>
+        <text class="tag tag--tan">{{item.status}}</text>
+      </view>
+      <view class="order__row"><text class="order__k">订单号</text><text class="grow mono">{{item.id}}</text></view>
+      <view class="order__row" wx:if="{{item.refundReason}}"><text class="order__k">退款原因</text><text class="grow">{{item.refundReason}}</text></view>
+      <view class="order__row" wx:if="{{item.refundAt}}"><text class="order__k">处理时间</text><text class="grow">{{item.refundAt}}</text></view>
+      <view class="tiny" style="margin-top: 10rpx">权益变化：退款成功后回收未消费云增强次数；已保存到相册的成片不受影响。</view>
+    </view>
+  </block>
+
+  <!-- 退款申请 -->
+  <view class="mask" wx:if="{{showRefund}}" bindtap="closeRefund">
+    <view class="sheet" catchtap="noop">
+      <view class="sheet__title">申请退款</view>
+      <view class="meta">
+        <view class="meta__row"><text class="meta__k">订单号</text><text class="grow mono">{{refundTarget.id}}</text></view>
+        <view class="meta__row"><text class="meta__k">规格</text><text class="grow">{{refundTarget.planName}}</text></view>
+        <view class="meta__row"><text class="meta__k">退款金额</text><text class="grow">¥{{refundTarget.amount}}</text></view>
+      </view>
+      <picker mode="selector" range="{{reasons}}" value="{{reasonIndex}}" bindchange="onReason">
+        <view class="cell">
+          <view class="cell__icon">?</view>
+          <view class="grow">
+            <view class="board__name">退款原因</view>
+            <view class="tiny">{{reasons[reasonIndex]}}</view>
+          </view>
+          <text class="cell__arrow">›</text>
+        </view>
+      </picker>
+      <textarea class="remark" placeholder="补充说明（选填，例如已消费次数）" placeholder-class="field__ph" value="{{remark}}" bindinput="onRemark" maxlength="120" />
+      <view class="notice" style="margin-top: 14rpx">
+        <text>规则</text>
+        <text class="grow">退款到账后同步回收未消费权益；如权益已消费，会在审核时驳回并给出原因。</text>
+      </view>
+      <view class="grid-2" style="margin-top: 22rpx">
+        <view class="btn btn--ghost" bindtap="closeRefund">取消</view>
+        <view class="btn btn--primary" bindtap="submitRefund">{{submitting ? '提交中…' : '提交申请'}}</view>
+      </view>
+    </view>
+  </view>
+</view>

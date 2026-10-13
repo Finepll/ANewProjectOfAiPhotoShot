@@ -1,0 +1,172 @@
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 80;
+  display: flex;
+  align-items: flex-end;
+  height: calc(112rpx + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: #fcf7df;
+  border-top: 2rpx solid rgba(167, 154, 138, 0.28);
+  box-shadow: 0 -8rpx 26rpx rgba(62, 54, 48, 0.06);
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6rpx;
+  height: 112rpx;
+  transition: transform 0.18s ease;
+}
+
+.tab:active {
+  transform: scale(0.94);
+}
+
+.tab--center {
+  justify-content: flex-end;
+  padding-bottom: 8rpx;
+}
+
+.tab__text {
+  font-size: 21rpx;
+  color: #a79a8a;
+  transition: color 0.2s ease;
+}
+
+.tab__text--on {
+  color: #3e3630;
+  font-weight: 600;
+}
+
+/* ---------------- CSS 绘制图标 ---------------- */
+.icon {
+  position: relative;
+  width: 44rpx;
+  height: 44rpx;
+  color: #a79a8a;
+  transition: color 0.2s ease;
+}
+
+.icon--on {
+  color: #3e3630;
+}
+
+.p {
+  position: absolute;
+  box-sizing: border-box;
+  border-color: currentColor;
+  transition: all 0.2s ease;
+}
+
+/* 影棚：相机 */
+.icon--studio .p1 {
+  left: 2rpx;
+  top: 12rpx;
+  width: 40rpx;
+  height: 28rpx;
+  border: 3rpx solid;
+  border-radius: 10rpx;
+}
+
+.icon--studio .p2 {
+  left: 17rpx;
+  top: 21rpx;
+  width: 10rpx;
+  height: 10rpx;
+  border: 3rpx solid;
+  border-radius: 50%;
+}
+
+/* 模板：版式块 */
+.icon--tpl .p1 {
+  left: 3rpx;
+  top: 6rpx;
+  width: 38rpx;
+  height: 13rpx;
+  border: 3rpx solid;
+  border-radius: 6rpx;
+}
+
+.icon--tpl .p2 {
+  left: 3rpx;
+  top: 25rpx;
+  width: 24rpx;
+  height: 13rpx;
+  border: 3rpx solid;
+  border-radius: 6rpx;
+}
+
+/* 作品：相框 */
+.icon--works .p1 {
+  left: 4rpx;
+  top: 5rpx;
+  width: 36rpx;
+  height: 34rpx;
+  border: 3rpx solid;
+  border-radius: 9rpx;
+}
+
+.icon--works .p2 {
+  left: 13rpx;
+  top: 14rpx;
+  width: 9rpx;
+  height: 9rpx;
+  background: currentColor;
+  border-radius: 50%;
+}
+
+/* 我的：人像 */
+.icon--me .p1 {
+  left: 15rpx;
+  top: 4rpx;
+  width: 14rpx;
+  height: 14rpx;
+  border: 3rpx solid;
+  border-radius: 50%;
+}
+
+.icon--me .p2 {
+  left: 6rpx;
+  top: 23rpx;
+  width: 32rpx;
+  height: 17rpx;
+  border: 3rpx solid;
+  border-bottom: none;
+  border-radius: 18rpx 18rpx 0 0;
+}
+
+/* ---------------- 中央快门 ---------------- */
+.shutter {
+  width: 92rpx;
+  height: 92rpx;
+  margin-top: -30rpx;
+  border-radius: 50%;
+  background: #c7d3db;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10rpx 22rpx rgba(62, 54, 48, 0.2);
+  border: 6rpx solid #fcf7df;
+  transition: background 0.2s ease, transform 0.18s ease;
+}
+
+.shutter:active {
+  transform: scale(0.94);
+}
+
+.shutter--on {
+  background: #3e3630;
+}
+
+.shutter__ring {
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 50%;
+  border: 4rpx solid #fffdf5;
+}

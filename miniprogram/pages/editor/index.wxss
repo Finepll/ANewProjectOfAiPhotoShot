@@ -1,0 +1,271 @@
+.editor {
+  padding-bottom: 20rpx;
+}
+
+.stage-wrap {
+  position: relative;
+  height: 760rpx;
+  border-radius: 32rpx;
+  overflow: hidden;
+  background: #3e3630;
+  box-shadow: 0 16rpx 36rpx rgba(62, 54, 48, 0.18);
+}
+
+.stage {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.stage__hint {
+  position: absolute;
+  left: 20rpx;
+  bottom: 20rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.stage__loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fcf7df;
+  font-size: 26rpx;
+}
+
+/* ---------- 风格包 ---------- */
+.themes {
+  width: 100%;
+  white-space: nowrap;
+  margin-top: 22rpx;
+}
+
+.themes__track {
+  display: flex;
+  gap: 14rpx;
+}
+
+.theme-chip {
+  flex: none;
+  padding: 12rpx 26rpx;
+  border-radius: 999rpx;
+  background: var(--c-blue-soft);
+  font-size: 25rpx;
+  color: var(--c-ink-2);
+  transition: all 0.2s ease;
+}
+
+.theme-chip--on {
+  background: var(--c-ink);
+  color: var(--c-cream);
+  font-weight: 600;
+}
+
+/* ---------- 滑块 ---------- */
+.slider {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 8rpx;
+}
+
+.slider__label {
+  width: 130rpx;
+  font-size: 25rpx;
+  color: var(--c-ink-2);
+  flex: none;
+}
+
+.slider__val {
+  width: 76rpx;
+  text-align: right;
+  font-size: 22rpx;
+  color: var(--c-ink-3);
+  flex: none;
+}
+
+/* ---------- 贴纸 ---------- */
+.sticker-list {
+  display: flex;
+  gap: 16rpx;
+  flex-wrap: wrap;
+  margin-top: 16rpx;
+}
+
+.sticker-item {
+  position: relative;
+  padding: 16rpx 30rpx;
+  border-radius: 20rpx;
+  background: var(--c-blue-soft);
+  transition: all 0.2s ease;
+}
+
+.sticker-item--on {
+  background: var(--c-ink);
+  color: var(--c-cream);
+}
+
+.sticker-item__text {
+  font-size: 38rpx;
+}
+
+.sticker-item__del {
+  position: absolute;
+  right: -10rpx;
+  top: -10rpx;
+  width: 34rpx;
+  height: 34rpx;
+  border-radius: 50%;
+  background: var(--c-tan);
+  color: #fff;
+  font-size: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.packs {
+  width: 100%;
+  white-space: nowrap;
+  margin: 8rpx 0 16rpx;
+}
+
+.packs__track {
+  display: flex;
+  gap: 14rpx;
+}
+
+.pack {
+  flex: none;
+  padding: 12rpx 24rpx;
+  border-radius: 999rpx;
+  background: var(--c-blue-soft);
+  font-size: 24rpx;
+  color: var(--c-ink-2);
+}
+
+.pack--on {
+  background: var(--c-blue);
+  color: var(--c-ink);
+  font-weight: 600;
+}
+
+.lib {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16rpx;
+}
+
+.lib__item {
+  height: 130rpx;
+  border-radius: 20rpx;
+  background: var(--c-cream);
+  border: 2rpx solid var(--c-line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.16s ease;
+}
+
+.lib__item:active {
+  transform: scale(0.94);
+}
+
+.lib__text {
+  font-size: 40rpx;
+  text-align: center;
+}
+
+/* ---------- 图层 ---------- */
+.layer {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  padding: 20rpx 0;
+  border-bottom: 2rpx solid var(--c-line);
+}
+
+.layer:last-of-type {
+  border-bottom: none;
+}
+
+.layer__dot {
+  width: 18rpx;
+  height: 18rpx;
+  border-radius: 50%;
+  background: var(--c-tan);
+  flex: none;
+}
+
+.layer__dot--off {
+  background: var(--c-line);
+}
+
+.layer__name {
+  font-size: 27rpx;
+}
+
+.layer__op {
+  font-size: 22rpx;
+  color: var(--c-ink-2);
+  padding: 4rpx 12rpx;
+  border-radius: 999rpx;
+  background: var(--c-blue-soft);
+}
+
+/* ---------- 编排 ---------- */
+.pipe {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 18rpx 0;
+  border-bottom: 2rpx solid var(--c-line);
+}
+
+.pipe:last-child {
+  border-bottom: none;
+}
+
+.pipe__dot {
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: 50%;
+  background: var(--c-line);
+  flex: none;
+}
+
+.pipe__dot--run {
+  background: var(--c-tan);
+  box-shadow: 0 0 0 6rpx rgba(167, 154, 138, 0.24);
+}
+
+.pipe__dot--done {
+  background: var(--c-ink);
+}
+
+.pipe__title {
+  font-size: 27rpx;
+  font-weight: 500;
+}
+
+.pipe__state {
+  font-size: 22rpx;
+  color: var(--c-ink-3);
+}
+
+/* ---------- 底部操作条 ---------- */
+.actions {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 18rpx 28rpx calc(20rpx + env(safe-area-inset-bottom));
+  background: rgba(252, 247, 223, 0.96);
+  border-top: 2rpx solid var(--c-line);
+}

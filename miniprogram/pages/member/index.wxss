@@ -1,0 +1,150 @@
+.banner {
+  background: linear-gradient(140deg, var(--c-blue) 0%, rgba(167, 154, 138, 0.85) 100%);
+  color: var(--c-ink);
+}
+
+.banner__title {
+  font-size: 36rpx;
+  font-weight: 600;
+}
+
+.banner__sub {
+  font-size: 23rpx;
+  color: rgba(62, 54, 48, 0.72);
+  margin-top: 8rpx;
+}
+
+.banner__quota {
+  text-align: right;
+}
+
+.banner__num {
+  font-size: 56rpx;
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* ---------------- 规格卡 ---------------- */
+.plans {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.plan {
+  background: var(--c-card);
+  border-radius: var(--r-lg);
+  padding: 26rpx 28rpx;
+  box-shadow: var(--shadow);
+  border: 2rpx solid transparent;
+}
+
+.plan--rec {
+  border-color: var(--c-ink);
+}
+
+.plan__name {
+  font-size: 31rpx;
+  font-weight: 600;
+  margin-right: 12rpx;
+}
+
+.plan__price {
+  display: flex;
+  align-items: baseline;
+  gap: 6rpx;
+}
+
+.plan__cur {
+  font-size: 24rpx;
+}
+
+.plan__num {
+  font-size: 44rpx;
+  font-weight: 600;
+}
+
+.plan__origin {
+  font-size: 22rpx;
+  color: var(--c-ink-3);
+  text-decoration: line-through;
+}
+
+.plan__benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  margin-top: 14rpx;
+}
+
+.plan__benefit {
+  font-size: 23rpx;
+  color: var(--c-ink-2);
+}
+
+/* ---------------- 对比表 ---------------- */
+.cmp {
+  margin-top: 20rpx;
+  width: 100%;
+}
+
+.cmp__grid {
+  display: inline-block;
+  min-width: 100%;
+}
+
+.cmp__row {
+  display: flex;
+  border-bottom: 2rpx solid var(--c-line);
+}
+
+.cmp__row--head .cmp__cell {
+  font-weight: 600;
+  background: rgba(199, 211, 219, 0.25);
+}
+
+.cmp__cell {
+  width: 210rpx;
+  flex: none;
+  padding: 18rpx 12rpx;
+  font-size: 24rpx;
+  text-align: center;
+  border-right: 2rpx solid var(--c-line);
+}
+
+.cmp__cell--k {
+  width: 190rpx;
+  text-align: left;
+  color: var(--c-ink-2);
+  background: rgba(167, 154, 138, 0.12);
+}
+
+.rule {
+  font-size: 24rpx;
+  color: var(--c-ink-2);
+  line-height: 1.75;
+  margin-top: 14rpx;
+}
+
+/* ---------------- 订单元信息 ---------------- */
+.meta {
+  margin-top: 8rpx;
+}
+
+.meta__row {
+  display: flex;
+  gap: 18rpx;
+  padding: 18rpx 0;
+  border-bottom: 2rpx solid var(--c-line);
+  font-size: 27rpx;
+}
+
+.meta__row:last-child {
+  border-bottom: none;
+}
+
+.meta__k {
+  width: 180rpx;
+  color: var(--c-ink-2);
+  flex: none;
+}

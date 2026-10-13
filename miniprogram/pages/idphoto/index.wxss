@@ -1,0 +1,240 @@
+.id {
+  padding-bottom: calc(180rpx + env(safe-area-inset-bottom));
+}
+
+/* ---------------- 预览 ---------------- */
+.stage-wrap {
+  position: relative;
+  margin-top: 8rpx;
+  border-radius: 28rpx;
+  overflow: hidden;
+  background: var(--c-blue-soft);
+  box-shadow: var(--shadow);
+}
+
+.stage {
+  width: 100%;
+  height: 720rpx;
+  display: block;
+}
+
+.stage__badge {
+  position: absolute;
+  left: 20rpx;
+  top: 20rpx;
+}
+
+.stage__loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c-ink-2);
+  font-size: 25rpx;
+}
+
+/* ---------------- 用途与搜索 ---------------- */
+.usages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+  margin-top: 18rpx;
+}
+
+.chip {
+  padding: 10rpx 24rpx;
+  border-radius: 999rpx;
+  background: var(--c-tan-soft);
+  font-size: 24rpx;
+  color: var(--c-ink-2);
+  transition: all 0.16s ease;
+}
+
+.chip:active {
+  transform: scale(0.95);
+}
+
+.chip--on {
+  background: var(--c-ink);
+  color: var(--c-cream);
+}
+
+.search {
+  margin-top: 20rpx;
+  height: 76rpx;
+  padding: 0 26rpx;
+  border-radius: 999rpx;
+  background: var(--c-blue-soft);
+  font-size: 27rpx;
+}
+
+/* ---------------- 规格卡片 ---------------- */
+.spec-grid {
+  margin-top: 24rpx;
+}
+
+.spec {
+  position: relative;
+  background: var(--c-card);
+  border-radius: var(--r-md);
+  padding: 18rpx 16rpx 20rpx;
+  border: 2rpx solid transparent;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.spec--on {
+  border-color: var(--c-ink);
+}
+
+.spec__box {
+  height: 108rpx;
+  margin: 0 auto 14rpx;
+  border-radius: 8rpx;
+  border: 2rpx solid var(--c-tan);
+  background: linear-gradient(160deg, var(--c-blue-soft), rgba(167, 154, 138, 0.2));
+}
+
+.spec__name {
+  font-size: 25rpx;
+  font-weight: 600;
+}
+
+.spec__tag {
+  position: absolute;
+  right: 10rpx;
+  top: 10rpx;
+}
+
+/* ---------------- 底色 ---------------- */
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18rpx;
+  margin-top: 20rpx;
+}
+
+.swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  padding: 10rpx;
+  border-radius: var(--r-md);
+  border: 2rpx solid transparent;
+}
+
+.swatch--on {
+  border-color: var(--c-ink);
+  background: rgba(199, 211, 219, 0.25);
+}
+
+.swatch__dot {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  border: 2rpx solid rgba(62, 54, 48, 0.18);
+}
+
+.swatch__name {
+  font-size: 21rpx;
+  color: var(--c-ink-2);
+}
+
+/* ---------------- 滑块与合规校验 ---------------- */
+.slider {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 12rpx;
+}
+
+.slider__label {
+  width: 110rpx;
+  font-size: 25rpx;
+  color: var(--c-ink-2);
+  flex: none;
+}
+
+.slider__val {
+  width: 80rpx;
+  text-align: right;
+  font-size: 24rpx;
+  color: var(--c-ink-3);
+}
+
+.checks {
+  margin-top: 16rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 16rpx 20rpx;
+  border-radius: var(--r-md);
+  background: rgba(199, 211, 219, 0.28);
+}
+
+.check--warn {
+  background: rgba(223, 177, 153, 0.3);
+}
+
+.check__dot {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background: var(--c-ink);
+  color: var(--c-cream);
+  font-size: 22rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.check__name {
+  font-size: 25rpx;
+  font-weight: 500;
+}
+
+/* ---------------- 底部操作栏 ---------------- */
+.bar-fixed {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 70;
+  display: flex;
+  gap: 18rpx;
+  padding: 20rpx 28rpx calc(20rpx + env(safe-area-inset-bottom));
+  background: rgba(252, 247, 223, 0.96);
+  border-top: 2rpx solid var(--c-line);
+}
+
+.bar-fixed .btn--ghost {
+  width: 180rpx;
+  flex: none;
+}
+
+/* ---------------- 去向选择 ---------------- */
+.dest {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 24rpx 6rpx;
+  border-bottom: 2rpx solid var(--c-line);
+}
+
+.dest:active {
+  background: rgba(199, 211, 219, 0.2);
+}
+
+.dest__name {
+  font-size: 28rpx;
+  font-weight: 500;
+}

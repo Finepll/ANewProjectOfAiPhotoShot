@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <!-- Maven项目模型版本，固定4.0.0 -->
+  <modelVersion>4.0.0</modelVersion>
+
+	<configuration scan="true" scanPeriod="60 seconds">
+			<!-- 定义日志输出格式 -->
+			<property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"/>
+			<!-- 日志存放路径，放在项目根目录logs文件夹 -->
+			<property name="LOG_PATH" value="${user.home}/logs/photoshot"/>
+
+			<!-- 控制台输出：开发时看控制台 -->
+			<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+					<encoder>
+							<pattern>${LOG_PATTERN}</pattern>
+					</encoder>
+			</appender>
+
+			<!-- 【INFO 正常业务日志】只输出INFO、WARN，排除ERROR，按天切割，保留30天 -->
+			<appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+					<file>${LOG_PATH}/info.log</file>
+					<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+							<fileNamePattern>${LOG_PATH}/info.%d{yyyy-MM-dd}.log</fileNamePattern>
+							<maxHistory>30</maxHistory>
+					</rollingPolicy>
+					<filter class="ch.qos.logback.classic.filter.LevelFilter">
+							<level>ERROR</level>
+							<onMatch>DENY</onMatch> <!-- ERROR拒绝写入info日志 -->
+							<onMismatch>ACCEPT</onMismatch>
+					</filter>
+					<encoder>
+							<pattern>${LOG_PATTERN}</pattern>
+					</encoder>
+			</appender>
+
+			<!-- 【ERROR 错误日志】只输出ERROR级别日志，单独文件 -->
+			<appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+					<file>${LOG_PATH}/error.log</file>
+					<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+							<fileNamePattern>${LOG_PATH}/error.%d{yyyy-MM-dd}.log</fileNamePattern>
+							<maxHistory>30</maxHistory>
+					</rollingPolicy>
+					<filter class="ch.qos.logback.classic.filter.LevelFilter">
+							<level>ERROR</level>
+							<onMatch>ACCEPT</onMatch>
+							<onMismatch>DENY</onMismatch>
+					</filter>
+					<encoder>
+							<pattern>${LOG_PATTERN}</pattern>
+					</encoder>
+			</appender>
+
+			<!-- 根日志：绑定上面三个输出源 -->
+			<root level="info">
+					<appender-ref ref="CONSOLE"/>
+					<appender-ref ref="INFO_FILE"/>
+					<appender-ref ref="ERROR_FILE"/>
+			</root>
+	</configuration>
+
+  <!-- SpringBoot父工程，统一管理所有依赖版本，避免版本冲突 -->
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>4.1.1</version>
+    <relativePath/> <!-- lookup parent from repository -->
+  </parent>
+
+  <!-- 项目坐标：groupId组织包名，artifactId项目名，version版本号 -->
+  <groupId>com.photoshot</groupId>
+  <artifactId>demo</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <name>demo</name>
+  <description>AiPhotoShot后端项目</description>
+  <url/>
+  <licenses>
+    <license/>
+  </licenses>
+  <developers>
+    <developer/>
+  </developers>
+  <scm>
+    <connection/>
+    <developerConnection/>
+    <tag/>
+    <url/>
+  </scm>
+
+  <properties>
+    <!-- 指定JDK版本21，SpringBoot4.x要求JDK21 -->
+    <java.version>21</java.version>
+  </properties>
+
+  <dependencies>
+    <!-- 参数校验：@Valid、@NotBlank、@NotNull等前端入参校验注解 -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+
+    <!-- SpringMVC Web核心，提供接口、@RestController，接收前端http请求 -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-webmvc</artifactId>
+    </dependency>
+
+    <!-- MySQL数据库驱动，runtime：仅运行时需要，编译不需要 -->
+    <dependency>
+      <groupId>com.mysql</groupId>
+      <artifactId>mysql-connector-j</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- Lombok：简化实体类，自动生成get/set/toString等，optional=true需要注解处理器配合 -->
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <optional>true</optional>
+    </dependency>
+
+    <!-- 测试包：validation相关单元测试 -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- 测试包：webmvc接口单元测试，用来测试Controller接口 -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-webmvc-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- SpringBoot打包插件，打成可直接运行的jar包 -->
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+
+      <!-- Maven编译插件，指定JDK编译版本，配置lombok注解处理器 -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <executions>
+          <!-- 主代码编译阶段 -->
+          <execution>
+            <id>default-compile</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <!-- lombok注解处理器，编译时自动生成get/set代码 -->
+              <annotationProcessorPaths>
+                <path>
+                  <groupId>org.projectlombok</groupId>
+                  <artifactId>lombok</artifactId>
+                </path>
+              </annotationProcessorPaths>
+            </configuration>
+          </execution>
+          <!-- 测试代码编译阶段 -->
+          <execution>
+            <id>default-testCompile</id>
+            <phase>test-compile</phase>
+            <goals>
+              <goal>testCompile</goal>
+            </goals>
+            <configuration>
+              <annotationProcessorPaths>
+                <path>
+                  <groupId>org.projectlombok</groupId>
+                  <artifactId>lombok</artifactId>
+                </path>
+              </annotationProcessorPaths>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

@@ -1,0 +1,128 @@
+<view class="page page--flat">
+  <!-- 会员状态 -->
+  <view class="card banner">
+    <view class="between">
+      <view>
+        <view class="banner__title">{{member.active ? member.planName : '尚未开通会员'}}</view>
+        <view class="banner__sub">
+          {{member.active ? '有效期至 ' + member.expireAt : '端侧能力永久免费，会员只解锁云增强与模板'}}
+        </view>
+      </view>
+      <view class="banner__quota">
+        <view class="banner__num">{{quota}}</view>
+        <view class="tiny">云增强剩余</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- F-PAY-01 规格橱窗 -->
+  <view class="section-title">
+    <view class="section-title__main">规格橱窗</view>
+    <text class="tag">F-PAY-01</text>
+  </view>
+
+  <view class="plans">
+    <view
+      wx:for="{{plans}}"
+      wx:key="id"
+      class="plan hit {{item.recommend ? 'plan--rec' : ''}}"
+      data-id="{{item.id}}"
+      bindtap="pickPlan"
+    >
+      <view class="between">
+        <view class="row">
+          <text class="plan__name">{{item.name}}</text>
+          <text class="tag {{item.recommend ? 'tag--ink' : 'tag--tan'}}">{{item.tag}}</text>
+        </view>
+        <view class="plan__price">
+          <text class="plan__cur">¥</text>
+          <text class="plan__num">{{item.price}}</text>
+          <text class="plan__origin">¥{{item.origin}}</text>
+        </view>
+      </view>
+      <view class="tiny" style="margin-top: 6rpx">{{item.duration}} · 赠送云增强 {{item.id === 'PL-P10' ? 10 : item.id === 'PL-M' ? 20 : item.id === 'PL-Q' ? 60 : 240}} 次</view>
+      <view class="plan__benefits">
+        <text class="plan__benefit" wx:for="{{item.benefits}}" wx:for-item="b" wx:key="*this">· {{b}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 规格对比 -->
+  <view class="card">
+    <view class="between">
+      <view class="title">规格对比</view>
+      <text class="tiny">价格与权益由后台配置下发，客户端不写死</text>
+    </view>
+    <scroll-view scroll-x class="cmp" enable-flex show-scrollbar="{{false}}">
+      <view class="cmp__grid">
+        <view class="cmp__row cmp__row--head">
+          <view class="cmp__cell cmp__cell--k">权益</view>
+          <view class="cmp__cell" wx:for="{{plans}}" wx:key="id">{{item.name}}</view>
+        </view>
+        <view class="cmp__row" wx:for="{{compare}}" wx:key="key">
+          <view class="cmp__cell cmp__cell--k">{{item.name}}</view>
+          <view class="cmp__cell" wx:for="{{item.cells}}" wx:for-item="cell" wx:key="*this">{{cell}}</view>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 规则说明 -->
+  <view class="card">
+    <view class="between">
+      <view class="title">支付与退款口径</view>
+      <text class="tag tag--tan">F-PAY-02 / F-PAY-05</text>
+    </view>
+    <view class="rule">1. 支付结果以服务端回调为准，回调验签且幂等，同一订单只入账一次。</view>
+    <view class="rule">2. 未收到回调前不发放权益；支付失败可原单重试，超时未支付自动关闭。</view>
+    <view class="rule">3. 会员与增强次数属虚拟商品，微信小程序 iOS 端不得销售，需按平台规则处理。</view>
+    <view class="rule">4. 涉及资金必须可退款、可对账；权益已消费的场景会在下单前告知。</view>
+    <view class="rule">5. 会员与订单流程不携带任何图片、人脸数据或工程内容。</view>
+    <view class="notice" style="margin-top: 18rpx">
+      <text>演示</text>
+      <text class="grow">当前为演示环境：点击规格会模拟一次微信支付并本机记账，不会产生真实扣款。</text>
+    </view>
+  </view>
+
+  <!-- 下单确认 -->
+  <view class="mask" wx:if="{{showConfirm}}" bindtap="closeConfirm">
+    <view class="sheet" catchtap="noop">
+      <view class="sheet__title">确认订单</view>
+      <view class="meta">
+        <view class="meta__row"><text class="meta__k">规格</text><text class="grow">{{selected.name}}（{{selected.duration}}）</text></view>
+        <view class="meta__row"><text class="meta__k">应付金额</text><text class="grow">¥{{selected.price}}</text></view>
+        <view class="meta__row"><text class="meta__k">权益</text><text class="grow">{{selectedBenefitsText}}</text></view>
+        <view class="meta__row" bindtap="payMethodTap"><text class="meta__k">支付方式</text><text class="grow">{{payMethod}} ›</text></view>
+      </view>
+      <view class="notice" style="margin-top: 18rpx">
+        <text>提醒</text>
+        <text class="grow">虚拟商品一经使用不可退；未消费的权益可在「订单与账单」中申请退款。支付结果以服务端回调为准。</text>
+      </view>
+      <view class="grid-2" style="margin-top: 22rpx">
+        <view class="btn btn--ghost" bindtap="closeConfirm">取消</view>
+        <view class="btn btn--primary" bindtap="confirmPay">{{paying ? '支付中…' : '微信支付 ¥' + selected.price}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 支付结果 -->
+  <view class="mask" wx:if="{{showResult}}" bindtap="closeResult">
+    <view class="sheet" catchtap="noop">
+      <view class="sheet__title">支付成功 · 权益已到账</view>
+      <view class="notice notice--cream">
+        <text>到账</text>
+        <text class="grow">{{lastOrder.planName}} · 云增强 +{{lastOrder.quotaGain}} 次 · 有效期至 {{member.expireAt}}</text>
+      </view>
+      <view class="meta" style="margin-top: 16rpx">
+        <view class="meta__row"><text class="meta__k">订单号</text><text class="grow mono">{{lastOrder.id}}</text></view>
+        <view class="meta__row"><text class="meta__k">渠道流水号</text><text class="grow mono">{{lastOrder.tradeNo}}</text></view>
+        <view class="meta__row"><text class="meta__k">金额</text><text class="grow">¥{{lastOrder.amount}}</text></view>
+      </view>
+      <view class="grid-2" style="margin-top: 22rpx">
+        <view class="btn btn--ghost" bindtap="goOrders">查看订单</view>
+        <view class="btn btn--primary" bindtap="goCamera">去用额度</view>
+      </view>
+      <view class="btn btn--ghost btn--block" style="margin-top: 14rpx" bindtap="closeResult">关闭</view>
+    </view>
+  </view>
+</view>

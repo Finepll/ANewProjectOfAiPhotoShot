@@ -1,0 +1,99 @@
+.user__avatar {
+  width: 116rpx;
+  height: 116rpx;
+  border-radius: 34rpx;
+  background: linear-gradient(150deg, var(--c-blue), var(--c-tan));
+  color: var(--c-cream);
+  font-size: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 24rpx;
+  flex: none;
+}
+
+.user__name {
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.rec__tags {
+  display: flex;
+  gap: 10rpx;
+  margin-top: 12rpx;
+  flex-wrap: wrap;
+}
+
+.quota__num {
+  font-size: 64rpx;
+  font-weight: 600;
+  line-height: 1;
+  margin-right: 18rpx;
+}
+
+/* ---------------- 隐私看板 ---------------- */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18rpx;
+  margin-top: 20rpx;
+}
+
+.stat {
+  padding: 22rpx;
+  border-radius: var(--r-md);
+  background: rgba(199, 211, 219, 0.25);
+}
+
+.stat__num {
+  font-size: 32rpx;
+  font-weight: 600;
+  margin-bottom: 4rpx;
+}
+
+.board {
+  margin-top: 22rpx;
+  border-top: 2rpx solid var(--c-line);
+}
+
+.board__row {
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  padding: 20rpx 0;
+  border-bottom: 2rpx solid var(--c-line);
+}
+
+.board__name {
+  font-size: 28rpx;
+  font-weight: 500;
+}
+
+/* ---------------- 开关行 ---------------- */
+.switch-row {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  padding: 24rpx 0;
+  border-bottom: 2rpx solid var(--c-line);
+}
+
+.switch-row:last-of-type {
+  border-bottom: none;
+}
+
+.draft-scroll {
+  max-height: 46vh;
+}
+
+.rec__del {
+  font-size: 24rpx;
+  color: var(--c-ink-3);
+  padding: 10rpx 14rpx;
+  flex: none;
+}
+
+.cell__arrow {
+  font-size: 25rpx;
+  color: var(--c-ink-3);
+}

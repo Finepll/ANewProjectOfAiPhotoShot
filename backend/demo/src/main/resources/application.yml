@@ -1,0 +1,19 @@
+server:
+  port: 8080
+#spring:
+#  datasource:
+#    driver-class-name: com.mysql.cj.jdbc.Driver
+#    url: jdbc:mysql://127.0.0.1:3306/demo_db?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+#    username: root
+#    password: 你的数据库密码
+mybatis:
+  mapper-locations: classpath:mybatis/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+# logback由xml主导，yml只简单控制级别
+logging:
+  level:
+    root: info
+    com.photoshot: info  # 自己项目代码日志级别
+    org.springframework: warn # 框架日志减少噪音
