@@ -140,6 +140,15 @@ function openLogs(row) {
   drawer.visible = true
 }
 
+/* 表格操作列里「额度」下拉的两个分支。收进下拉只是为了腾列宽（见表格上方的宽度依据），
+   两个动作本身没有变，仍分别打开原来的额度调整弹窗与额度流水抽屉。
+   用 command 而不是两个 @click：下拉项是共用一份模板渲染的，文字写在 item 上，
+   分支判断只能靠 command 值。 */
+function quotaCommand(cmd, row) {
+  if (cmd === 'adjust') openQuota(row)
+  else if (cmd === 'logs') openLogs(row)
+}
+
 /* 用户详情抽屉与「额度流水」分开：流水是账（额度怎么变的），详情是档案
    （这个用户是谁、用了多少、授权过什么）。报告 I-02 把授权签署记录归在详情里，
    它和额度变动没有关系，塞进流水时间线只会让两件事互相干扰 */
@@ -265,25 +274,33 @@ const quotaDistOption = computed(() => ({
         </div>
       </div>
       <div class="ap-card__body">
-        <el-table :data="filtered" stripe>
-          <el-table-column prop="id" label="用户ID" width="110" />
-          <el-table-column prop="phone" label="手机号（脱敏）" width="140" />
-          <el-table-column prop="nick" label="昵称" min-width="120" />
-          <el-table-column prop="registered" label="注册时间" width="160" />
-          <el-table-column label="剩余额度" width="110" sortable :sort-method="(a, b) => a.quota - b.quota">
+        <!-- 列宽是从容器宽度倒推的，不是拍脑袋填的。实测依据：
+             可见容器 1134px（1440 视口扣掉侧边栏与内边距后的物理上限，布局里没有 max-width 可放开）。
+             11 列按各自内容的最小需求相加是 1138px——只差 4px 放不下。
+             差这么一点就不该去动列结构：报告 I-02 点名要「任务次数」这个列名，
+             把订单数并进来改成「任务 / 订单」，字面上就对不上了。
+             这 4px 交给 .cell 的内边距补（本文件末尾那段样式：左右各收 1px，11 列共省 22px）。
+             下面各列的宽度取自「表头文本宽与最宽单元格文本宽取大，再加 .cell 左右各 11px」，
+             已把收窄后的 2px 算进去。昵称用 min-width 留弹性，容器有余量时优先分给它。 -->
+        <el-table :data="filtered" stripe class="users-table">
+          <el-table-column prop="id" label="用户ID" width="83" />
+          <el-table-column prop="phone" label="手机号（脱敏）" width="120" />
+          <el-table-column prop="nick" label="昵称" min-width="92" />
+          <el-table-column prop="registered" label="注册时间" width="145" />
+          <el-table-column label="剩余额度" width="102" sortable :sort-method="(a, b) => a.quota - b.quota">
             <template #default="{ row }">
               <span class="num quota" :class="{ 'quota--low': row.quota <= 1 }">{{ row.quota }}</span>
               <span class="ap-muted"> 张</span>
             </template>
           </el-table-column>
-          <el-table-column label="会员" width="100">
+          <el-table-column label="会员" width="66">
             <template #default="{ row }">
               <span class="soft-tag" :class="row.member === '无' ? 'soft-tag--mute' : 'soft-tag--warm'">
                 {{ row.member }}
               </span>
             </template>
           </el-table-column>
-          <el-table-column label="状态" width="110">
+          <el-table-column label="状态" width="90">
             <template #default="{ row }">
               <span
                 class="soft-tag"
@@ -293,20 +310,33 @@ const quotaDistOption = computed(() => ({
               </span>
             </template>
           </el-table-column>
-          <el-table-column prop="orders" label="订单数" width="90" />
+          <el-table-column prop="orders" label="订单数" width="64" />
           <!-- 报告 I-02 要求列表含「任务次数」。它不能被订单数顶替：一次订单可能产出多次
-               任务，而免费用户没有订单照样有任务（每日免费额度那 5 张），两个数一起看才有意义 -->
-          <el-table-column prop="tasks" label="任务次数" width="104" sortable :sort-method="(a, b) => a.tasks - b.tasks">
+               任务，而免费用户没有订单照样有任务（每日免费额度那 5 张），两个数一起看才有意义。
+               两列各自保留独立列名与独立排序，没有并栏——理由见表格上方那段宽度依据。 -->
+          <el-table-column prop="tasks" label="任务次数" width="102" sortable :sort-method="(a, b) => a.tasks - b.tasks">
             <template #default="{ row }">
               <span class="num">{{ row.tasks }}</span>
               <span class="ap-muted"> 次</span>
             </template>
           </el-table-column>
-          <el-table-column prop="lastActive" label="最近活跃" width="130" />
-          <el-table-column label="操作" width="288" fixed="right">
+          <el-table-column prop="lastActive" label="最近活跃" width="104" />
+          <el-table-column label="操作" width="148" fixed="right">
             <template #default="{ row }">
-              <el-button link type="primary" @click="openQuota(row)">额度调整</el-button>
-              <el-button link type="primary" @click="openLogs(row)">额度流水</el-button>
+              <!-- 额度调整与额度流水同属额度管理，收进一个入口。四个并排按钮要 288px，
+                   而这一列是 fixed 的——它占多宽就永久遮住多少列宽，是横向溢出里最贵的一段。
+                   两项仍各自打开原来的弹窗与抽屉，只是多一步展开下拉。 -->
+              <el-dropdown trigger="click" @command="(cmd) => quotaCommand(cmd, row)">
+                <el-button link type="primary">
+                  额度<el-icon :size="12"><ArrowDown /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="adjust">额度调整</el-dropdown-item>
+                    <el-dropdown-item command="logs">额度流水</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
               <el-button link type="primary" @click="openProfile(row)">详情</el-button>
               <el-button link :type="row.status === '封禁' ? 'success' : 'danger'" @click="toggleBan(row)">
                 {{ row.status === '封禁' ? '解封' : '封禁' }}
@@ -546,5 +576,13 @@ const quotaDistOption = computed(() => ({
   font-size: 11px;
   color: var(--c-text-mute);
   margin-top: 4px;
+}
+
+/* 用户表把 11 列压到内容刚好放下后，仍差 4px 才装进 1134px 的容器
+   （列宽的推导见模板里那段宽度依据）。这 4px 交给内边距补：.cell 左右各收 1px，
+   11 列共省 22px。1px 的内边距差别肉眼分辨不出来，换掉的是整条横向滚动条。
+   只作用于这张表——本页抽屉里的授权表只有 3 列，不必跟着改。 */
+.users-table :deep(.cell) {
+  padding: 0 11px;
 }
 </style>

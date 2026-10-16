@@ -5,7 +5,7 @@ Vue 3 + Vite + Element Plus + ECharts 搭建的运营管理后台演示，页面
 ## 快速启动
 
 ```bash
-cd aAiPhotoShot/frontend
+cd ANewProjectOfAiPhotoShot/frontend
 npm install          # 首次运行
 npm run dev          # 默认 http://localhost:5173
 npm run build        # 产物输出到 dist/
