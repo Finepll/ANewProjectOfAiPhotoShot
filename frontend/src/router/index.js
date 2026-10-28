@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { useAuthStore } from '../stores/auth'
 import AdminLayout from '../layouts/AdminLayout.vue'
 
@@ -66,13 +67,13 @@ const routes = [
         path: 'system/admins',
         name: 'Admins',
         component: () => import('../views/Admins.vue'),
-        meta: { title: '管理员与权限', group: '系统管理', feature: 'F-ADM-03', icon: 'Avatar' }
+        meta: { title: '管理员与权限', group: '系统管理', feature: 'F-ADM-03', icon: 'Avatar', roles: ['super'] }
       },
       {
         path: 'system/audit',
         name: 'AuditLog',
         component: () => import('../views/AuditLog.vue'),
-        meta: { title: '操作审计', group: '系统管理', feature: 'F-ADM-03', icon: 'Document' }
+        meta: { title: '操作审计', group: '系统管理', feature: 'F-ADM-03', icon: 'Document', roles: ['super'] }
       }
     ]
   },
@@ -90,12 +91,22 @@ const router = createRouter({
 
 router.beforeEach((to) => {
   const auth = useAuthStore()
+  /* 只有 token、没有管理员信息时按未登录处理，并顺手把这个孤立 token 清掉：
+     留着它会让 isLogin 之外的判断（比如各处读 auth.token）以为会话还在，
+     而 roleKey 实际取不到，带 meta.roles 的页面会以「未知角色」拒绝访问。 */
+  if (auth.token && !auth.admin) auth.logout()
   if (to.meta.public) {
     if (auth.isLogin && to.path === '/login') return { path: '/dashboard' }
     return true
   }
   if (!auth.isLogin) {
     return { path: '/login', query: to.fullPath === '/' ? {} : { redirect: to.fullPath } }
+  }
+  /* 角色约束和侧边栏菜单用的是同一份 meta.roles：
+     只在菜单里藏起来是不够的，直接改地址栏照样能进。 */
+  if (to.meta.roles && !to.meta.roles.includes(auth.admin?.roleKey)) {
+    ElMessage.warning(`当前角色（${auth.admin?.role || '未知'}）无权访问「${to.meta.title}」`)
+    return { path: '/dashboard' }
   }
   return true
 })

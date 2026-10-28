@@ -11,10 +11,17 @@ import App from './App.vue'
 import router from './router'
 import { logError } from './utils/log'
 
-// 全局捕获代码异常
-window.onerror = function (message, source, lineno, colno, error) {
-  logError(`前端全局异常：${message}`, { source, lineno, colno, stack: error?.stack })
-}
+// 全局捕获代码异常。
+// 用 addEventListener 而不是直接给 window.onerror 赋值：
+// 赋值会覆盖掉别处（监控 SDK、调试工具）已注册的处理器，且同一个属性只能挂一个。
+window.addEventListener('error', (event) => {
+  logError(`前端全局异常：${event.message}`, {
+    source: event.filename,
+    lineno: event.lineno,
+    colno: event.colno,
+    stack: event.error?.stack
+  })
+})
 // 捕获 Promise 异步报错（axios 请求失败等）
 window.addEventListener('unhandledrejection', (event) => {
   logError(`异步Promise异常：${event.reason}`)

@@ -1,13 +1,15 @@
 <script setup>
-import { reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '../stores/auth'
+import { usePolicyStore } from '../stores/policy'
 import { demoMeta } from '../mock'
 
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
+const policy = usePolicyStore()
 
 const formRef = ref(null)
 const loading = ref(false)
@@ -29,10 +31,31 @@ const rules = {
   ]
 }
 
-const demoAccounts = [
-  { account: 'admin', password: 'admin123', label: '超级管理员', tone: 'accent' },
-  { account: 'ops', password: 'ops123', label: '运营专员', tone: 'primary' }
-]
+/* 演示账号的唯一来源是 auth store 里那份账号表：原先这里把账号和密码又抄了一遍
+   （admin/admin123、ops/ops123），auth store 里换密码或加账号，这排提示条不动——
+   点一下「自动填入」，填进去的就是过期的密码。tone 只管配色，不是账号数据，留在本页。 */
+const DEMO_TONES = { super: 'accent', ops: 'primary' }
+const demoAccounts = computed(() =>
+  auth.accounts.map((item) => ({
+    account: item.account,
+    password: item.password,
+    label: item.info.role,
+    tone: DEMO_TONES[item.info.roleKey] || 'primary'
+  }))
+)
+
+/* 「记住账号」原先只是个没有任何行为的开关：勾不勾都一样，刷新回来还是空的。
+   它只记账号、不记密码——密码落盘是另一个量级的安全问题，演示环境也不该开这个头。 */
+const REMEMBER_KEY = 'ap_admin_remember_account'
+
+onMounted(() => {
+  const savedAccount = localStorage.getItem(REMEMBER_KEY)
+  if (savedAccount) form.account = savedAccount
+})
+
+function onRememberChange(value) {
+  if (!value) localStorage.removeItem(REMEMBER_KEY)
+}
 
 function fill(item) {
   form.account = item.account
@@ -50,6 +73,8 @@ async function submit() {
   loading.value = true
   try {
     const admin = await auth.login({ account: form.account, password: form.password })
+    if (remember.value) localStorage.setItem(REMEMBER_KEY, admin.account)
+    else localStorage.removeItem(REMEMBER_KEY)
     ElMessage.success(`欢迎回来，${admin.name}`)
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/dashboard'
     router.push(redirect)
@@ -142,7 +167,7 @@ async function submit() {
           </el-form-item>
 
           <div class="login-card__row">
-            <el-checkbox v-model="remember">记住账号</el-checkbox>
+            <el-checkbox v-model="remember" @change="onRememberChange">记住账号</el-checkbox>
             <span class="login-card__link" @click="ElMessage.info('请联系开发人员重置密码')">
               忘记密码？
             </span>
@@ -179,7 +204,7 @@ async function submit() {
           </div>
           <p class="login-card__tip">
             <el-icon :size="12"><InfoFilled /></el-icon>
-            演示 Demo 未连接后端，账号校验在本地完成；失败 5 次将锁定 30 分钟（仅正式环境生效）
+            演示 Demo 未连接后端，账号校验在本地完成；失败 {{ policy.maxFail }} 次将锁定 {{ policy.lockMinutes }} 分钟（仅正式环境生效）
           </p>
         </div>
       </div>

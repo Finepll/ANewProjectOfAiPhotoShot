@@ -49,7 +49,12 @@ export const useAuthStore = defineStore('auth', {
     accounts: MOCK_ACCOUNTS
   }),
   getters: {
-    isLogin: (state) => !!state.token,
+    /* 会话完整才算已登录。token 和 admin 信息是 localStorage 里两个独立的 key，
+       可能只剩一个（清缓存、手工删掉、写入被截断）。
+       原先只看 token：admin 为 null → roleKey 取不到 → 超管被当成「无角色」，
+       系统管理整组菜单消失，手输地址也被弹回看板并提示「当前角色（未知）无权访问」，
+       而且没有自愈路径，只能手动退出重登。 */
+    isLogin: (state) => !!state.token && !!state.admin,
     isSuper: (state) => state.admin?.roleKey === 'super',
     displayName: (state) => state.admin?.name || '未登录'
   },

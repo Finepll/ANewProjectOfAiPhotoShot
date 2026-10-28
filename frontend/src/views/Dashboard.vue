@@ -1,58 +1,83 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import PageHeader from '../components/PageHeader.vue'
 import StatCard from '../components/StatCard.vue'
 import ChartBox from '../components/ChartBox.vue'
 import {
-  dashboardKpis,
+  buildDashboardKpis,
+  buildDashboardSnapshot,
   trend14,
   categoryDist,
   hotTemplates,
   taskStatusDist,
-  todoList,
-  wave,
-  lastDays
+  buildTodoList
 } from '../mock'
+import { usePlansStore } from '../stores/plans'
 import { PALETTE, C_SUB, tooltip, legendBase, gridBase, catAxis, valAxis, areaGradient, barGradient, hexA } from '../utils/chartTheme'
 
 const router = useRouter()
+const plansStore = usePlansStore()
 
-const kpis = ref([...dashboardKpis])
+const kpis = ref(buildDashboardKpis())
 const trend = ref({ ...trend14 })
+/* 待办条数由各业务页的真实数据算出（见 mock 的 buildTodoList），
+   不在这里写死数字，避免和退款页/模板页对不上。
+   规格那条必须把 store 传进去：buildTodoList 默认读的是 mock 里的静态常量，
+   而规格页编辑的是 store 里那份，不传就永远显示旧的生效日期。 */
+const todoList = computed(() => buildTodoList(plansStore.list))
 const loading = ref(false)
 const chartKey = ref(0)
 
+/* 刷新与入场动画用的定时器都存句柄，卸载时清掉：
+   原先 setTimeout 的返回值随手丢掉了，在点完「刷新数据」620ms 内切页，
+   回调仍会跑到已销毁的组件上，并弹出「看板数据已刷新」的提示——
+   人已经在模板页了，却收到看板的提示。 */
+const timers = []
+
+function later(fn, ms) {
+  const id = setTimeout(() => {
+    const i = timers.indexOf(id)
+    if (i > -1) timers.splice(i, 1)
+    fn()
+  }, ms)
+  timers.push(id)
+  return id
+}
+
 function refresh() {
   loading.value = true
-  setTimeout(() => {
-    const seed = Math.random() * 10 + 1
-    const days = lastDays(14)
-    trend.value = {
-      days,
-      local: wave(14, 800, 260, seed),
-      cloud: wave(14, 450, 190, seed + 0.7),
-      successRate: wave(14, 96, 4, seed + 1.3).map((v) => Math.min(99.6, Math.max(90, v + 0.6))),
-      revenue: wave(14, 15200, 5200, seed + 2.1)
-    }
-    kpis.value = dashboardKpis.map((item) => ({
+  later(() => {
+    /* 曲线和 KPI 卡从同一个快照里出来，刷新后卡片和柱子仍然对得上。
+       原先这里分三处各自随机：曲线用新种子重新游走、每张 KPI 卡再各乘一个
+       独立的 ±6% 系数、成功率那张卡甚至能刷出 102.5%——
+       而它旁边那张图里画的成功率曲线，y 轴上限就是 100。 */
+    const snapshot = buildDashboardSnapshot(Math.random() * 10 + 1)
+    trend.value = snapshot.trend
+    /* 只让「较昨日」这类对比标签轻微晃动：它是跟昨天比出来的数，
+       页面上没有任何一处拿它做加减，晃了也不会和别的数字打架。 */
+    kpis.value = snapshot.kpis.map((item) => ({
       ...item,
-      value: typeof item.value === 'number' ? Number((item.value * (1 + (Math.random() - 0.5) * 0.12)).toFixed(item.digits || 0)) : item.value,
       delta: Number((item.delta + (Math.random() - 0.5) * 4).toFixed(1))
     }))
     chartKey.value += 1
     loading.value = false
-    ElMessage.success('看板数据已刷新（演示数据随机波动）')
+    ElMessage.success('看板数据已刷新（走势曲线重新采样，跨页面共享的指标保持不变）')
   }, 620)
 }
 
 onMounted(() => {
   // 首屏做一次轻微的入场刷新，让图表有动态感
-  setTimeout(() => {
+  later(() => {
     loading.value = true
-    setTimeout(() => (loading.value = false), 380)
+    later(() => (loading.value = false), 380)
   }, 120)
+})
+
+onBeforeUnmount(() => {
+  timers.forEach((id) => clearTimeout(id))
+  timers.length = 0
 })
 
 const trendOption = computed(() => ({
@@ -187,7 +212,7 @@ function goTodo(item) {
     </PageHeader>
 
     <!-- KPI -->
-    <div class="kpi-grid">
+    <div class="kpi-grid kpi-grid--6">
       <StatCard
         v-for="item in kpis"
         :key="item.key"
@@ -276,22 +301,6 @@ function goTodo(item) {
 </template>
 
 <style scoped>
-.kpi-grid {
-  display: grid;
-  gap: 14px;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-}
-@media (max-width: 1500px) {
-  .kpi-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-@media (max-width: 900px) {
-  .kpi-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 .grid-2 {
   display: grid;
   gap: 16px;

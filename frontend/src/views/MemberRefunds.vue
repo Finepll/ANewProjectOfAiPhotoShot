@@ -4,10 +4,19 @@ import { ElMessage } from 'element-plus'
 import PageHeader from '../components/PageHeader.vue'
 import StatCard from '../components/StatCard.vue'
 import ChartBox from '../components/ChartBox.vue'
-import { refunds, refundTrend, refundSteps } from '../mock'
+import { refunds, refundTrend, refundSteps, refundReasons, REFUND_TOTAL_30D, sumThisMonth, todayStamp } from '../mock'
 import { PALETTE, C_SUB, tooltip, legendBase, gridBase, catAxis, valAxis, barGradient, areaGradient } from '../utils/chartTheme'
 
-const list = ref(refunds.map((item) => ({ ...item })))
+/* flow / skipped 是嵌套数组，必须逐层复制：
+   只做浅拷贝的话 {...item} 里的 flow 仍指向 mock 源数组，
+   审批时 push 的流水会写回模块级数据，下次进入本页状态已复位、流水却还留着。 */
+const list = ref(
+  refunds.map((item) => ({
+    ...item,
+    flow: item.flow.map((ev) => ({ ...ev })),
+    skipped: [...(item.skipped || [])]
+  }))
+)
 const statusFilter = ref('全部')
 
 const statusOptions = ['全部', '待初审', '待复核', '已打款', '已驳回']
@@ -16,11 +25,28 @@ const filtered = computed(() =>
   list.value.filter((item) => statusFilter.value === '全部' || item.status === statusFilter.value)
 )
 
+/* 四项指标全部从数据算出来：
+   - 「本月退款金额」原先写死 3862，而按同屏那张趋势图的 10 月各日金额相加是 3367；
+   - 「退款率」原先写死 1.24%，趋势图末点画的是 1.40%——
+     卡片和它旁边的曲线在同一天给出两个数，看的人不知道该信哪个；
+   - 「待主管复核」的说明原先写「金额 ≥ 100 元」，而判定函数还有第二个条件
+     （权益已使用），19 元却卡在待复核的单子点开来看不出原因。 */
 const stats = computed(() => [
   { key: 'first', label: '待初审', value: list.value.filter((i) => i.status === '待初审').length, unit: '笔', icon: 'DocumentChecked', tone: 'primary', delta: 1, hint: '客服处理' },
-  { key: 'review', label: '待主管复核', value: list.value.filter((i) => i.status === '待复核').length, unit: '笔', icon: 'UserFilled', tone: 'accent', delta: 2, hint: '金额 ≥ 100 元' },
-  { key: 'amount', label: '本月退款金额', value: 3862, unit: '元', icon: 'Money', tone: 'warm', delta: -4.6, invert: true, hint: '较上月' },
-  { key: 'rate', label: '退款率', value: 1.24, unit: '%', digits: 2, icon: 'TrendCharts', tone: 'light', delta: -0.3, invert: true, hint: '行业均值 2.1%' }
+  { key: 'review', label: '待主管复核', value: list.value.filter((i) => i.status === '待复核').length, unit: '笔', icon: 'UserFilled', tone: 'accent', delta: 2, hint: '金额 ≥ 100 元 或 已用权益' },
+  { key: 'amount', label: '本月退款金额', value: sumThisMonth(refundTrend.days, refundTrend.amount), unit: '元', icon: 'Money', tone: 'warm', delta: -4.6, invert: true, hint: '10 月各日合计' },
+  {
+    key: 'rate',
+    label: '退款率',
+    value: refundTrend.rate[refundTrend.rate.length - 1],
+    unit: '%',
+    digits: 2,
+    icon: 'TrendCharts',
+    tone: 'light',
+    delta: -0.3,
+    invert: true,
+    hint: '行业均值 2.1%'
+  }
 ])
 
 const trendOption = computed(() => ({
@@ -65,18 +91,29 @@ const reasonOption = computed(() => ({
       center: ['36%', '50%'],
       itemStyle: { borderColor: '#fff', borderWidth: 3, borderRadius: 6 },
       label: { show: false },
-      data: [
-        { name: '误购 / 重复购买', value: 18 },
-        { name: '效果与预览不符', value: 12 },
-        { name: '生成失败未补偿', value: 7 },
-        { name: '其他', value: 5 }
-      ]
+      /* 数据在 mock 里（refundReasons），不在页面配置里写死 */
+      data: refundReasons
     }
   ]
 }))
 
 /* ---------------- 审批 / 驳回 ---------------- */
+/* 阶段号与 refundSteps 的数组下标一一对应（refundSteps[i] 就是第 i+1 步）。
+   单据上只存三个量：step（已完成到第几步）、skipped（本单免走的步）、
+   rejectedAt（被驳回的步），渲染时由 stepStatus() 合成 el-steps 需要的状态。 */
+const STAGE = { APPLY: 1, SERVICE: 2, MANAGER: 3, PAYOUT: 4, RECYCLE: 5 }
+
 const review = reactive({ visible: false, row: null, action: 'approve', reason: '', recycle: true })
+
+/* 二级复核有两条触发条件（金额 ≥ 100 元、或权益已使用），
+   判定和提示必须同源：原先弹窗只写 amount >= 100，
+   一条 19 元却卡在「待复核」的单子点开来，看不出它为什么需要复核。 */
+function needSecondReview(row) {
+  if (!row) return ''
+  if (row.amount >= 100) return '金额 ≥ 100 元，需主管复核'
+  if (row.usedBenefit) return '权益已使用，需主管复核'
+  return ''
+}
 
 function openReview(row, action) {
   review.row = row
@@ -92,16 +129,52 @@ function submitReview() {
     return
   }
   const row = list.value.find((item) => item.id === review.row.id)
+  const stamp = todayStamp()
+
   if (review.action === 'approve') {
-    row.status = row.amount >= 100 ? '待复核' : '已打款'
-    row.step = Math.min(5, row.step + 2)
+    /* 这一步是谁在审，取决于单据当前卡在哪：待初审 = 客服，待复核 = 主管。
+       两级审批共用同一个按钮，所以结论必须按当前阶段分流，否则会把主管的复核
+       记成客服初审，出现「同一个阶段两条记录」。 */
+    const atService = row.status === '待初审'
+    const stage = atService ? STAGE.SERVICE : STAGE.MANAGER
+    row.flow.push({
+      stage,
+      title: atService ? '客服初审' : '主管复核',
+      detail: `${stamp} · 当前管理员 · ${review.reason}${review.recycle ? ' · 同意回收未使用权益' : ' · 保留用户权益'}`
+    })
+    row.step = stage
     row.operator = '当前管理员'
-    ElMessage.success(
-      row.amount >= 100 ? '已提交主管复核（金额 ≥ 100 元需二级审批）' : '审批通过，已提交财务原路退回'
-    )
+
+    if (atService && needSecondReview(row)) {
+      /* 客服通过但仍需二级复核：转主管，此时不能再往下走流水 */
+      row.status = '待复核'
+      ElMessage.success(`客服初审通过，已提交主管复核（${needSecondReview(row)}）`)
+      review.visible = false
+      return
+    }
+
+    /* 到这里就是终局放款：免复核时客服初审后直接打款，需补记被跳过的第 3 步 */
+    if (atService) row.skipped = [...(row.skipped || []), STAGE.MANAGER]
+    row.status = '已打款'
+    row.step = STAGE.PAYOUT
+    row.flow.push({
+      stage: STAGE.PAYOUT,
+      title: '财务打款',
+      detail: `${stamp} · 系统 · 已提交原路退回（${row.channel}），1-3 个工作日到账，渠道回执同步中`
+    })
+    if (review.recycle) {
+      row.step = STAGE.RECYCLE
+      row.flow.push({ stage: STAGE.RECYCLE, title: '权益回收', detail: `${stamp} · F-SRV-05 · 已回收未使用权益并写入账单流水` })
+    }
+    ElMessage.success(review.recycle ? '审批通过，已提交原路退回并回收权益' : '审批通过，已提交原路退回（保留用户权益）')
   } else {
+    /* 驳回是终态：记下是在哪一步被驳回的，链路里那一步标红 */
+    const stage = row.status === '待复核' ? STAGE.MANAGER : STAGE.SERVICE
     row.status = '已驳回'
+    row.rejectedAt = stage
+    row.step = Math.max(row.step, stage - 1)
     row.operator = '当前管理员'
+    row.flow.push({ stage, title: '驳回', tone: 'error', detail: `${stamp} · 当前管理员 · ${review.reason}` })
     ElMessage.success('已驳回，理由将同步给用户与客服')
   }
   review.visible = false
@@ -113,6 +186,20 @@ const chain = reactive({ visible: false, row: null })
 function openChain(row) {
   chain.row = row
   chain.visible = true
+}
+
+/* el-steps 每个节点的状态全部由数据推出来，四种情况互斥：
+   驳回的阶段标红；本单免走的阶段（金额 < 100 元时的主管复核）留灰；
+   已完成的阶段打勾；下一个待办阶段高亮为进行中。
+   直接绑 :active="step" 做不到区分——那个数字分不清「还没走到」和「不用走」。 */
+function stepStatus(index) {
+  const row = chain.row
+  if (!row) return 'wait'
+  const stage = index + 1
+  if (row.rejectedAt === stage) return 'error'
+  if (row.skipped?.includes(stage)) return 'wait'
+  if (stage <= row.step) return 'finish'
+  return stage === row.step + 1 ? 'process' : 'wait'
 }
 
 function statusType(status) {
@@ -138,7 +225,7 @@ function statusType(status) {
       </template>
     </PageHeader>
 
-    <div class="kpi-grid">
+    <div class="kpi-grid kpi-grid--4">
       <StatCard
         v-for="item in stats"
         :key="item.key"
@@ -167,7 +254,10 @@ function statusType(status) {
       <div class="ap-card">
         <div class="ap-card__head">
           <div class="ap-card__title">退款原因分布</div>
-          <span class="soft-tag soft-tag--warm">近 30 天</span>
+          <!-- 口径必须写在界面上：这张饼图是近 30 天全部 {{ REFUND_TOTAL_30D }} 笔，
+               下面表格是近期申请样例。两个数字对不上是口径不同，不是数据错，
+               但页面上不说清，看的人只会当成 bug。 -->
+          <span class="soft-tag soft-tag--warm">近 30 天 · 共 {{ REFUND_TOTAL_30D }} 笔</span>
         </div>
         <div class="ap-card__body">
           <ChartBox :option="reasonOption" :height="286" />
@@ -178,7 +268,7 @@ function statusType(status) {
     <div class="ap-card">
       <div class="ap-card__head">
         <div class="ap-card__title">退款申请</div>
-        <span class="ap-muted">共 {{ filtered.length }} 笔</span>
+        <span class="ap-muted">近期申请样例 · 显示 {{ filtered.length }} / {{ list.length }} 笔</span>
       </div>
       <div class="ap-card__body">
         <el-table :data="filtered" stripe>
@@ -222,6 +312,11 @@ function statusType(status) {
               </el-button>
             </template>
           </el-table-column>
+          <!-- 表格已经按状态筛过数据，空态必须自己给：
+               不给的话 Element 会渲染英文默认文案，且提示与本页的筛选项无关 -->
+          <template #empty>
+            <el-empty :description="statusFilter === '全部' ? '暂无退款申请' : `没有「${statusFilter}」状态的退款申请`" />
+          </template>
         </el-table>
       </div>
     </div>
@@ -238,8 +333,8 @@ function statusType(status) {
         </el-form-item>
         <el-form-item label="退款金额">
           <span class="num amount">¥ {{ review.row?.amount.toFixed(2) }}</span>
-          <span v-if="review.row?.amount >= 100" class="soft-tag soft-tag--warm" style="margin-left: 10px">
-            超过 100 元，需主管复核
+          <span v-if="needSecondReview(review.row)" class="soft-tag soft-tag--warm" style="margin-left: 10px">
+            {{ needSecondReview(review.row) }}
           </span>
         </el-form-item>
         <el-form-item :label="review.action === 'approve' ? '审批意见' : '驳回理由'" required>
@@ -282,49 +377,31 @@ function statusType(status) {
           <div><span>关联订单</span><span class="mono">{{ chain.row.order }}</span></div>
           <div><span>用户</span><span>{{ chain.row.user }}</span></div>
           <div><span>规格 / 金额</span><span>{{ chain.row.plan }} · ¥ {{ chain.row.amount.toFixed(2) }}</span></div>
+          <div><span>退款渠道</span><span>{{ chain.row.channel }}（原路退回）</span></div>
           <div><span>申请理由</span><span>{{ chain.row.reason }}</span></div>
           <div><span>申请时间</span><span>{{ chain.row.applyAt }}</span></div>
         </div>
         <el-divider content-position="left">审批链路</el-divider>
-        <el-steps direction="vertical" :active="chain.row.step" finish-status="success" process-status="process">
-          <el-step v-for="step in refundSteps" :key="step.title" :title="step.title" :description="step.desc" />
+        <el-steps direction="vertical" :active="chain.row.step" finish-status="success">
+          <el-step
+            v-for="(step, index) in refundSteps"
+            :key="step.title"
+            :title="step.title"
+            :description="chain.row.skipped?.includes(index + 1) ? `${step.desc}（本单金额 < 100 元，免复核）` : step.desc"
+            :status="stepStatus(index)"
+          />
         </el-steps>
         <el-divider content-position="left">退款流水</el-divider>
         <div class="flow">
-          <div class="flow__row">
-            <span class="flow__dot"></span>
+          <div v-for="(ev, index) in chain.row.flow" :key="index" class="flow__row">
+            <span class="flow__dot" :class="{ 'flow__dot--error': ev.tone === 'error' }"></span>
             <div>
-              <div>申请提交</div>
-              <div class="ap-muted">{{ chain.row.applyAt }} · 用户端</div>
+              <div>{{ ev.title }}</div>
+              <div class="ap-muted">{{ ev.detail }}</div>
             </div>
           </div>
-          <div v-if="chain.row.step >= 2" class="flow__row">
-            <span class="flow__dot"></span>
-            <div>
-              <div>客服初审</div>
-              <div class="ap-muted">2026-10-10 09:58 · 客服·王琪</div>
-            </div>
-          </div>
-          <div v-if="chain.row.step >= 3" class="flow__row">
-            <span class="flow__dot"></span>
-            <div>
-              <div>主管复核</div>
-              <div class="ap-muted">2026-10-10 10:12 · 主管·赵宁</div>
-            </div>
-          </div>
-          <div v-if="chain.row.step >= 4" class="flow__row">
-            <span class="flow__dot"></span>
-            <div>
-              <div>财务打款</div>
-              <div class="ap-muted">渠道流水 4200002288202610920</div>
-            </div>
-          </div>
-          <div v-if="chain.row.step >= 5" class="flow__row">
-            <span class="flow__dot"></span>
-            <div>
-              <div>权益回收</div>
-              <div class="ap-muted">已回收未使用权益并写入账单流水</div>
-            </div>
+          <div v-if="chain.row.flow.length < 2" class="ap-muted flow__hint">
+            客服尚未受理，暂无后续流水
           </div>
         </div>
       </div>
@@ -333,17 +410,6 @@ function statusType(status) {
 </template>
 
 <style scoped>
-.kpi-grid {
-  display: grid;
-  gap: 14px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-@media (max-width: 1100px) {
-  .kpi-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 .grid-2 {
   display: grid;
   gap: 16px;
@@ -408,5 +474,16 @@ function statusType(status) {
   background: var(--c-primary);
   box-shadow: 0 0 0 3px var(--c-primary-soft);
   flex: none;
+}
+
+/* 驳回这条流水的圆点跟随标签色，避免和正常节点长得一样 */
+.flow__dot--error {
+  background: var(--c-accent);
+  box-shadow: 0 0 0 3px var(--c-accent-soft);
+}
+
+.flow__hint {
+  font-size: 12.5px;
+  padding-left: 18px;
 }
 </style>

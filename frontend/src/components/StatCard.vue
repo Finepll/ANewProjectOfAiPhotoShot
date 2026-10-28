@@ -19,8 +19,11 @@ let raf = null
 
 function format(num) {
   if (typeof num !== 'number') return num
-  const fixed = num.toFixed(props.digits)
-  return props.digits > 0 ? fixed.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : fixed.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  /* 千分位只加整数部分。原先两个分支写的是同一个表达式（都直接 replace 整串），
+     既没用到 digits，也会在位数多的小数里插逗号（1234.5678 → 1,234.5,678）。 */
+  const [int, frac] = num.toFixed(props.digits).split('.')
+  const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  return frac ? `${grouped}.${frac}` : grouped
 }
 
 function animate(to) {

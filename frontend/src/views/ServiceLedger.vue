@@ -3,11 +3,21 @@ import { computed, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import PageHeader from '../components/PageHeader.vue'
 import ChartBox from '../components/ChartBox.vue'
-import { stateMachine, ledgerFlows, stateDist, lastDays, wave } from '../mock'
+import { stateMachine, ledgerFlows, ledgerAmountOf, stateDist, lastDays, wave } from '../mock'
+import { usePlansStore } from '../stores/plans'
 import { PALETTE, C_SUB, tooltip, legendBase, gridBase, catAxis, valAxis, areaGradient } from '../utils/chartTheme'
 
-const list = ref(ledgerFlows.map((item) => ({ ...item })))
+const plansStore = usePlansStore()
+/* 「变更内容」跟着规格页那份 grant 走：规格页改了「发放权益」，
+   这里的「+ 30 天」要当场变成新值，而不是继续念 mock 里的静态规格。
+   ledgerFlows 自带的那份 amount 是给纯数据检查用的默认值。 */
+const list = computed(() => ledgerFlows.map((item) => ({ ...item, amount: ledgerAmountOf(item, plansStore.grantOf) })))
 const typeFilter = ref('全部')
+
+/* 状态机按 from（真实前驱）拆成主链与分支：
+   branch: true 的节点不接在链尾，否则箭头会读成「权益入账 → 已关闭」 */
+const mainPath = computed(() => stateMachine.filter((step) => !step.branch))
+const branchPath = computed(() => stateMachine.filter((step) => step.branch))
 
 const typeOptions = ['全部', '权益入账', '权益冻结', '权益回收', '订单关闭']
 
@@ -106,16 +116,28 @@ function statusType(status) {
       </div>
       <div class="ap-card__body">
         <div class="machine">
-          <template v-for="(step, index) in stateMachine" :key="step.key">
+          <template v-for="(step, index) in mainPath" :key="step.key">
             <div class="machine__node">
               <div class="machine__key mono">{{ step.key }}</div>
               <div class="machine__title">{{ step.title }}</div>
               <div class="machine__desc">{{ step.desc }}</div>
             </div>
-            <div v-if="index < stateMachine.length - 1" class="machine__arrow">
+            <div v-if="index < mainPath.length - 1" class="machine__arrow">
               <el-icon :size="16"><Right /></el-icon>
             </div>
           </template>
+        </div>
+        <!-- 终态分支：从 PAYING 直接进入，不接在主链尾部 -->
+        <div v-for="step in branchPath" :key="step.key" class="machine__branch">
+          <div class="machine__branch-label">
+            <span class="soft-tag soft-tag--mute">{{ step.from }} 分支</span>
+            <span class="ap-muted">支付超时 · 用户取消</span>
+          </div>
+          <div class="machine__node machine__node--branch">
+            <div class="machine__key mono">{{ step.key }}</div>
+            <div class="machine__title">{{ step.title }}</div>
+            <div class="machine__desc">{{ step.desc }}</div>
+          </div>
         </div>
         <p class="ap-muted" style="margin: 14px 0 0">
           说明：CLOSED 为终态，可由「支付超时」或「用户取消」进入；已支付订单进入退款流程时冻结权益但不回收，打款成功后执行权益回收。
@@ -172,6 +194,11 @@ function statusType(status) {
           <el-table-column prop="operator" label="写入方" width="120">
             <template #default="{ row }"><span class="mono">{{ row.operator }}</span></template>
           </el-table-column>
+          <!-- 表格已经被类型筛选过，筛到空的时候必须说清是「没有数据」还是
+               「这个类型没有数据」，否则空表格看着像页面加载失败 -->
+          <template #empty>
+            <el-empty :description="typeFilter === '全部' ? '暂无流水记录' : `没有「${typeFilter}」类型的流水`" />
+          </template>
         </el-table>
       </div>
     </div>
@@ -235,6 +262,25 @@ function statusType(status) {
   display: grid;
   place-items: center;
   color: var(--c-primary-light);
+}
+.machine__branch {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--c-border);
+}
+.machine__branch-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: none;
+  font-size: 12px;
+}
+.machine__node--branch {
+  flex: 1 1 168px;
+  background: linear-gradient(160deg, #fbf7f6, #ffffff);
 }
 
 @media (max-width: 760px) {

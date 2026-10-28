@@ -216,6 +216,49 @@ a {
   gap: 16px;
 }
 
+/* KPI 卡片栅格：全站唯一定义处。
+   原先 5 个视图各写一份 scoped 副本（编译成 .kpi-grid[data-v-x]，特异性高于本文件），
+   补一处窄屏断点会漏掉另外四处。
+   基础类只负责骨架，列数一律交给修饰类 —— 若让 --4/--6 与基础类共享
+   grid-template-columns，两条媒体查询会同时命中同一元素、按源码顺序决出胜负，
+   窄屏档位就会串。窄屏阈值 520px 的依据：卡片内容 = 卡宽 - 图标42 - 间距14 - 内边距36
+   = 卡宽-92；26px 字号的四位数（如 12,345）实宽约 90px，故卡宽需 ≥182px，
+   双列需容器 ≥378px，而 ≤1180px 时容器 = 视口 - 112px → 视口需 ≥490px。 */
+.kpi-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.kpi-grid--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.kpi-grid--6 {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+@media (max-width: 1500px) {
+  .kpi-grid--6 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1100px) {
+  .kpi-grid--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 900px) {
+  .kpi-grid--6 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 520px) {
+  .kpi-grid--4,
+  .kpi-grid--6 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .ap-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -360,10 +403,14 @@ a {
   font-weight: 500;
 }
 
+/* Element Plus 的 .el-dialog 只设了 width、没有 max-width，
+   视图里写死 width="620px" 时会在窄视口里横向溢出（并撑出遮罩的横向滚动条）。
+   这里补一道上限守卫，任何写死尺寸的弹窗都自动收口。 */
 .el-dialog {
   border-radius: var(--r-lg);
   overflow: hidden;
   box-shadow: var(--sh-3);
+  max-width: calc(100% - 32px);
 }
 .el-dialog__header {
   margin-right: 0;
@@ -380,6 +427,12 @@ a {
 }
 .el-dialog__footer {
   padding: 12px 20px 18px;
+}
+
+/* 抽屉宽度由 size 写死（420~460px），同样没有 max-width。
+   右对齐抽屉在窄视口会左边越出视口，把每行文字的左半截裁掉。 */
+.el-drawer {
+  max-width: 100%;
 }
 
 .el-drawer__header {

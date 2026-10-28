@@ -1,15 +1,29 @@
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import PageHeader from '../components/PageHeader.vue'
 import ChartBox from '../components/ChartBox.vue'
-import { plans, planSales, benefitOptions } from '../mock'
+import { planSales, benefitOptions, nextId, userStats } from '../mock'
+import { usePlansStore } from '../stores/plans'
 import { PALETTE, C_SUB, tooltip, legendBase, gridBase, catAxis, valAxis, barGradient, areaGradient } from '../utils/chartTheme'
 
-const list = ref(plans.map((item) => ({ ...item })))
+/* 规格数据放 store 里，看板的待办要读同一份。
+   原先这里 `ref(plans.map(...))` 自己复制一份，页面里改完年卡生效日期，
+   看板待办那句仍念旧日期。 */
+const plansStore = usePlansStore()
+const list = computed(() => plansStore.list)
 
 const onlineCount = computed(() => list.value.filter((item) => item.status).length)
 const totalSales = computed(() => planSales.amounts.reduce((sum, item) => sum + item, 0))
+
+/* 两处原先都是写死的数字：
+   - 付费转化率写死 14.2%，用户页那头也是 14.2%，但那边是从 userStats 算出来的
+     （6842 / 48260），两处各写一份，改一处就对不上了；
+   - ARPU 写死 ¥27.3，而它能从已有数据推出来：累计销售额 ÷ 会员用户数 = 51.1。
+     27.3 既不等于累计销售额÷会员数（51.1），也不等于÷累计用户数（7.2），
+     也不等于÷累计销量（28.0）——是个没有出处的数。 */
+const memberShare = computed(() => Number(((userStats.member / userStats.total) * 100).toFixed(1)))
+const arpu = computed(() => Number((totalSales.value / userStats.member).toFixed(1)))
 
 const dialog = reactive({ visible: false, mode: 'edit', form: {} })
 
@@ -18,12 +32,15 @@ function openEdit(row) {
   dialog.form = row
     ? { ...row, benefits: [...row.benefits] }
     : {
-        id: `PLAN-${Date.now().toString().slice(-4)}`,
+        id: nextId('PLAN-', list.value, 1000),
         name: '',
         type: '订阅',
-        price: 0,
-        origin: 0,
+        /* 新建时给一个有意义的起点：0 元会被下面的校验挡回来，
+           直接填 1 元也还是「不可能的规格」，不如按订阅制的常规留空让人自己填 */
+        price: 19,
+        origin: 29,
         duration: '30 天',
+        grant: '30 天',
         status: false,
         effectAt: '2026-11-01 00:00',
         sellCount: 0,
@@ -39,18 +56,30 @@ function submit() {
     ElMessage.warning('请填写规格名称')
     return
   }
+  /* 价格校验。原先两个输入框只有 :min="0"，提交时一个数都不查，于是能存出
+     「售价 0 元」的规格；原价也没和售价比较过，能存出「原价 9 元、售价 19 元」——
+     页面上那条删除线原价反而比售价低，看着像在加价卖。
+     这类不可能的输入必须当场拒绝，不能静默存进去。 */
+  const price = Number(dialog.form.price)
+  const origin = Number(dialog.form.origin)
+  if (!Number.isFinite(price) || price <= 0) {
+    ElMessage.warning('售价必须大于 0 元')
+    return
+  }
+  if (!Number.isFinite(origin) || origin < price) {
+    ElMessage.warning(`原价（¥${Number.isFinite(origin) ? origin : 0}）不能低于售价（¥${price}），否则划线价看着像加价`)
+    return
+  }
   if (!dialog.form.benefits.length) {
     ElMessage.warning('至少勾选一项会员权益')
     return
   }
-  if (dialog.mode === 'edit') {
-    const index = list.value.findIndex((item) => item.id === dialog.form.id)
-    if (index > -1) list.value[index] = { ...dialog.form }
-    ElMessage.success('规格已保存，生效时间之后对用户可见')
-  } else {
-    list.value.push({ ...dialog.form, sellCount: 0 })
-    ElMessage.success('新规格已创建（默认下架，配置完成后可上架）')
-  }
+  /* 编辑与新增都交给 store 的 upsert，它按 id 决定覆盖还是追加；
+     新增的那条 sellCount 归零——新规格不可能已经有销量 */
+  plansStore.upsert(dialog.form)
+  ElMessage.success(
+    dialog.mode === 'edit' ? '规格已保存，生效时间之后对用户可见' : '新规格已创建（默认下架，配置完成后可上架）'
+  )
   dialog.visible = false
 }
 
@@ -137,11 +166,11 @@ const revenueOption = computed(() => ({
       </div>
       <div class="summary__item ap-card ap-card--hover">
         <span class="ap-sub">付费转化率</span>
-        <strong class="num">14.2 %</strong>
+        <strong class="num">{{ memberShare }} %</strong>
       </div>
       <div class="summary__item ap-card ap-card--hover">
         <span class="ap-sub">ARPU</span>
-        <strong class="num">¥ 27.3</strong>
+        <strong class="num">¥ {{ arpu }}</strong>
       </div>
     </div>
 
@@ -227,9 +256,17 @@ const revenueOption = computed(() => ({
           </el-radio-group>
         </el-form-item>
         <el-form-item label="售价 / 原价">
-          <el-input-number v-model="dialog.form.price" :min="0" :precision="1" :step="1" />
+          <!-- :min="0.1" 挡住「0 元规格」这种不可能值；上界给个 9999，
+               免得把 19999 误输成 199990 这种多打一位的数存进去 -->
+          <el-input-number v-model="dialog.form.price" :min="0.1" :max="9999" :precision="1" :step="1" />
           <span class="ap-muted" style="margin: 0 8px">原价</span>
-          <el-input-number v-model="dialog.form.origin" :min="0" :precision="1" :step="1" />
+          <el-input-number v-model="dialog.form.origin" :min="0.1" :max="9999" :precision="1" :step="1" />
+        </el-form-item>
+        <el-form-item label="发放权益">
+          <!-- 权益流水与人工补发弹窗都读这个字段（mock 里的 planGrant），
+               没有它，改完规格时长，流水上那几个数字仍念着旧值 -->
+          <el-input v-model="dialog.form.grant" placeholder="例如：30 天 / 10 张" style="width: 200px" />
+          <span class="ap-muted" style="margin-left: 8px">订阅制填时长，计次包填张数</span>
         </el-form-item>
         <el-form-item label="有效期">
           <el-input v-model="dialog.form.duration" placeholder="例如：30 天 / 90 天有效" />

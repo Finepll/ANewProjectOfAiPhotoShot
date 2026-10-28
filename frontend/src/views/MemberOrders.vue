@@ -4,7 +4,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import PageHeader from '../components/PageHeader.vue'
 import StatCard from '../components/StatCard.vue'
 import ChartBox from '../components/ChartBox.vue'
-import { orders, orderTrend, channelDist, reconciliation } from '../mock'
+import { orders, orderTrend, channelDist, reconciliation, dateKey, todayStats, plans, planGrant } from '../mock'
 import { PALETTE, C_SUB, tooltip, legendBase, gridBase, catAxis, valAxis, barGradient, areaGradient } from '../utils/chartTheme'
 
 const list = ref(orders.map((item) => ({ ...item })))
@@ -14,28 +14,46 @@ const channelFilter = ref('全部')
 const dateRange = ref([])
 const tab = ref('list')
 
-const statusOptions = ['全部', '已支付', '待支付', '支付超时', '退款中', '已关闭']
+/* 「已退款」必须在这里出现：退款单打完款后订单就是这个状态，
+   漏了它这些订单在列表里既筛不出来、也没有专属配色，只能落到兜底的灰色里 */
+const statusOptions = ['全部', '已支付', '已退款', '退款中', '待支付', '支付超时', '已关闭']
 const channelOptions = ['全部', '微信支付', 'Apple 内购', '支付宝']
 
-const filtered = computed(() =>
-  list.value.filter((item) => {
+const filtered = computed(() => {
+  /* 日期区间原先只绑在控件上、没有参与过滤；这里按「下单日期」做闭区间比较 */
+  const range = dateRange.value
+  const from = Array.isArray(range) && range.length === 2 ? dateKey(range[0]) : null
+  const to = Array.isArray(range) && range.length === 2 ? dateKey(range[1]) : null
+  return list.value.filter((item) => {
     const matchKeyword = !keyword.value || item.id.includes(keyword.value) || item.user.includes(keyword.value)
     const matchStatus = statusFilter.value === '全部' || item.status === statusFilter.value
     const matchChannel = channelFilter.value === '全部' || item.channel === channelFilter.value
-    return matchKeyword && matchStatus && matchChannel
+    const day = item.created.slice(0, 10)
+    const matchDate = !from || (day >= from && day <= to)
+    return matchKeyword && matchStatus && matchChannel && matchDate
   })
-)
-
-const stats = computed(() => {
-  const paid = list.value.filter((item) => item.status === '已支付')
-  const gmv = paid.reduce((sum, item) => sum + item.amount, 0)
-  return [
-    { key: 'gmv', label: '今日 GMV', value: 18640, unit: '元', icon: 'Money', tone: 'primary', delta: 12.8, hint: '含单次包' },
-    { key: 'count', label: '今日订单', value: 96, unit: '单', icon: 'Tickets', tone: 'light', delta: 6.4, hint: '支付成功 88 单' },
-    { key: 'rate', label: '支付成功率', value: 91.6, unit: '%', icon: 'CircleCheckFilled', tone: 'warm', digits: 1, delta: 1.2, hint: '近 24 小时' },
-    { key: 'abnormal', label: '异常 / 待处理单', value: list.value.filter((item) => item.abnormal).length, unit: '单', icon: 'WarningFilled', tone: 'accent', delta: -2, invert: true, hint: '需人工核对' }
-  ]
 })
+
+/* 三项取自 todayStats（看板「今日会员收入」读的是同一个数）。
+   成功率原先写死 91.6：同一条 hint 里写着「支付成功 88 单」，
+   而 88 / 96 = 91.67，四舍五入是 91.7——卡片和它自己的说明对不上。
+   改成从两个真实计数算出来，改数字时不用记着还有第三个地方要同步。 */
+const stats = computed(() => [
+  { key: 'gmv', label: '今日 GMV', value: todayStats.gmv, unit: '元', icon: 'Money', tone: 'primary', delta: 12.8, hint: '含单次包' },
+  { key: 'count', label: '今日订单', value: todayStats.orders, unit: '单', icon: 'Tickets', tone: 'light', delta: 6.4, hint: `支付成功 ${todayStats.paidOrders} 单` },
+  {
+    key: 'rate',
+    label: '支付成功率',
+    value: Number(((todayStats.paidOrders / todayStats.orders) * 100).toFixed(1)),
+    unit: '%',
+    icon: 'CircleCheckFilled',
+    tone: 'warm',
+    digits: 1,
+    delta: 1.2,
+    hint: '近 24 小时'
+  },
+  { key: 'abnormal', label: '异常 / 待处理单', value: list.value.filter((item) => item.abnormal).length, unit: '单', icon: 'WarningFilled', tone: 'accent', delta: -2, invert: true, hint: '需人工核对' }
+])
 
 const gmvOption = computed(() => ({
   color: PALETTE,
@@ -85,12 +103,19 @@ const channelOption = computed(() => ({
 }))
 
 /* ---------------- 人工补发 ---------------- */
-const deliveryDialog = reactive({ visible: false, row: null, remark: '', quota: 30 })
+const deliveryDialog = reactive({ visible: false, row: null, remark: '', grant: '' })
+
+/* 可补发的权益取自规格表，标签直接念规格自己的 grant——
+   原先这个下拉框只有「30 张（月卡）/ 90 张（季卡）/ 10 张（单次包）」三个写死的选项，
+   季卡其实发 90 天而不是 90 张，年卡 365 天干脆没有对应选项。 */
+const grantOptions = plans.map((item) => ({ label: `${item.name} · ${item.grant}`, value: item.grant }))
 
 function openDelivery(row) {
   deliveryDialog.row = row
   deliveryDialog.remark = ''
-  deliveryDialog.quota = 30
+  /* 默认值跟着订单自己的规格走：原先无论哪一单都默认「额度 30 张（月卡权益）」，
+     给一张年卡订单补发，弹窗一打开就预选了月卡的权益。 */
+  deliveryDialog.grant = planGrant(row.plan)
   deliveryDialog.visible = true
 }
 
@@ -100,9 +125,16 @@ function submitDelivery() {
     return
   }
   const row = list.value.find((item) => item.id === deliveryDialog.row.id)
+  /* 补发只补「权益」，不改支付状态：原先把 status 一律写成「已支付」，
+     会让支付超时 / 已关闭 / 待支付的单子在列表里变成已支付，与渠道流水号（-）自相矛盾。 */
   row.delivered = true
-  row.status = '已支付'
-  ElMessage.success(`已为 ${row.id} 补发权益，账单流水已记录`)
+  /* 选了什么就发什么，并把它记到这一行上：原先 submitDelivery 根本没读这个下拉框，
+     无论选 10 张还是 90 张，提示都是同一句，权益也没有落到订单上。 */
+  row.grant = deliveryDialog.grant
+  ElMessage.success(
+    `已为 ${row.id} 补发权益「${deliveryDialog.grant}」，账单流水已记录`
+    + `（支付状态保持「${row.status}」不变）`
+  )
   deliveryDialog.visible = false
 }
 
@@ -133,7 +165,28 @@ function openDetail(row) {
   detail.visible = true
 }
 
+/* el-steps 的 :active = 已走完的步数（0 起算的那一步是「进行中」）。
+   原先只有「已支付 → 4，其余 → 2」两档，两头都错：
+   待支付被算成已经走完「支付中」，而退款已经打款到账的单子反而退回第 2 步。
+   未付款就终结的三种状态一律停在第 1 步之后——它们只走完了「下单」，
+   把「支付中」也标绿等于说支付成功过。 */
+const STEP_ACTIVE = {
+  待支付: 1,
+  支付超时: 1,
+  已关闭: 1,
+  已支付: 4,
+  退款中: 4,
+  已退款: 4
+}
+
+function stepActive(status) {
+  return STEP_ACTIVE[status] ?? 1
+}
+
 function statusType(status) {
+  /* 「已退款」用中性的主色，和绿色（已支付）、灰色（已关闭/超时）都分得开：
+     它是钱已退出的终态，既不是成功也不是无效单。 */
+  if (status === '已退款') return 'soft-tag--primary'
   if (status === '已支付') return 'soft-tag--success'
   if (status === '退款中') return 'soft-tag--accent'
   if (status === '待支付') return 'soft-tag--warm'
@@ -161,7 +214,7 @@ function statusType(status) {
       </template>
     </PageHeader>
 
-    <div class="kpi-grid">
+    <div class="kpi-grid kpi-grid--4">
       <StatCard
         v-for="item in stats"
         :key="item.key"
@@ -234,6 +287,16 @@ function statusType(status) {
           <el-table-column label="金额" width="100">
             <template #default="{ row }">
               <span class="num">¥ {{ row.amount.toFixed(2) }}</span>
+            </template>
+          </el-table-column>
+          <!-- 优惠是金额旁边的独立一列，不并进「金额」。
+               本页已有三条对账口径（金额 / 平台记账 / 渠道账单），再引入一个
+               「实付」会让对账视图的差异算不清该以哪个为准；
+               单列展示减免额，amount 的口径就完全不用动。 -->
+          <el-table-column label="优惠" width="110">
+            <template #default="{ row }">
+              <span v-if="row.discount" class="num discount">- ¥ {{ row.discount.toFixed(2) }}</span>
+              <span v-else class="ap-muted">—</span>
             </template>
           </el-table-column>
           <el-table-column prop="channel" label="渠道" width="120" />
@@ -319,16 +382,29 @@ function statusType(status) {
         <div class="detail__row"><span>订单状态</span><span>{{ detail.row.status }}</span></div>
         <div class="detail__row"><span>渠道流水号</span><span class="mono">{{ detail.row.tradeNo }}</span></div>
         <div class="detail__row"><span>下单时间</span><span>{{ detail.row.created }}</span></div>
-        <div class="detail__row"><span>权益发放</span><span>{{ detail.row.delivered ? '已发放' : '未发放' }}</span></div>
+        <!-- 退过款的单子权益是被回收的，写「未发放」会让客服以为从没发过 -->
+        <div class="detail__row">
+          <span>权益发放</span>
+          <span>{{ detail.row.status === '已退款' ? '已回收' : detail.row.delivered ? '已发放' : '未发放' }}</span>
+        </div>
         <el-divider content-position="left">状态机流转</el-divider>
-        <el-steps direction="vertical" :active="detail.row.status === '已支付' ? 4 : 2" finish-status="success">
+        <el-steps direction="vertical" :active="stepActive(detail.row.status)" finish-status="success">
           <el-step title="下单" description="生成预付单" />
           <el-step title="支付中" description="调起微信支付" />
           <el-step title="已支付" description="回调验签通过" />
           <el-step title="权益入账" description="发放额度 / 会员有效期" />
         </el-steps>
         <div class="detail__actions">
-          <el-button type="danger" plain @click="refund(detail.row)">发起退款</el-button>
+          <!-- 已经退过款的单子不能再发起退款：钱已经出去了，
+               之前这个按钮对已退款订单照样可点，点完只弹一句「请到退款页提交申请」 -->
+          <el-button
+            type="danger"
+            plain
+            :disabled="detail.row.status === '已退款'"
+            @click="refund(detail.row)"
+          >
+            发起退款
+          </el-button>
           <el-button type="primary" plain @click="openDelivery(detail.row)">人工补发</el-button>
         </div>
       </div>
@@ -341,10 +417,13 @@ function statusType(status) {
           <span class="mono">{{ deliveryDialog.row?.id }}</span>
         </el-form-item>
         <el-form-item label="补发内容">
-          <el-select v-model="deliveryDialog.quota" style="width: 100%">
-            <el-option :label="`额度 30 张（月卡权益）`" :value="30" />
-            <el-option :label="`额度 90 张（季卡权益）`" :value="90" />
-            <el-option :label="`额度 10 张（单次包）`" :value="10" />
+          <el-select v-model="deliveryDialog.grant" style="width: 100%">
+            <el-option
+              v-for="item in grantOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="补发备注" required>
@@ -367,17 +446,6 @@ function statusType(status) {
 </template>
 
 <style scoped>
-.kpi-grid {
-  display: grid;
-  gap: 14px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-@media (max-width: 1100px) {
-  .kpi-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 .grid-2 {
   display: grid;
   gap: 16px;
@@ -391,6 +459,12 @@ function statusType(status) {
 
 .text-mute {
   color: var(--c-text-mute);
+}
+
+/* 与对账视图「差异为 0」用同一个绿：这一页里绿色已经被读作「钱对得上」，
+   减免额也是「用户少付了」，不再引第二个绿值出来 */
+.discount {
+  color: #668268;
 }
 
 .diff-ok {

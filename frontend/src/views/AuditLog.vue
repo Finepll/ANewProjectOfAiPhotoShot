@@ -3,7 +3,11 @@ import { computed, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import PageHeader from '../components/PageHeader.vue'
 import ChartBox from '../components/ChartBox.vue'
-import { auditLogs, auditTypes, auditTypeDist, auditTrend } from '../mock'
+import { auditLogs, auditTypes, auditTypeDist, auditTrend, dateKey } from '../mock'
+import { usePolicyStore } from '../stores/policy'
+
+/* 日志保留期取「管理员与权限」页保存的策略，不在这页写死 180 天 */
+const policy = usePolicyStore()
 import { PALETTE, C_SUB, tooltip, legendBase, gridBase, catAxis, valAxis, barGradient, areaGradient } from '../utils/chartTheme'
 
 const list = ref(auditLogs.map((item) => ({ ...item })))
@@ -12,15 +16,26 @@ const typeFilter = ref('全部')
 const resultFilter = ref('全部')
 const dateRange = ref([])
 
-const filtered = computed(() =>
-  list.value.filter((item) => {
+const filtered = computed(() => {
+  /* 日期区间原先只绑在控件上、没有参与过滤；这里按「操作日期」做闭区间比较 */
+  const range = dateRange.value
+  const from = Array.isArray(range) && range.length === 2 ? dateKey(range[0]) : null
+  const to = Array.isArray(range) && range.length === 2 ? dateKey(range[1]) : null
+  return list.value.filter((item) => {
     const matchKeyword =
       !keyword.value || item.account.includes(keyword.value) || item.name.includes(keyword.value) || item.target.includes(keyword.value)
     const matchType = typeFilter.value === '全部' || item.type === typeFilter.value
     const matchResult = resultFilter.value === '全部' || item.result === resultFilter.value
-    return matchKeyword && matchType && matchResult
+    const day = item.time.slice(0, 10)
+    const matchDate = !from || (day >= from && day <= to)
+    return matchKeyword && matchType && matchResult && matchDate
   })
-)
+})
+
+/* 页头上那句「近 7 天共 N 次操作」由分布数据求和得出，不写死数字：
+   它和右边的趋势图、以及「管理员与权限」页的角色图是同一批操作的三种切法，
+   写死的话改一处数据就会出现三个互相打架的合计。 */
+const total7d = computed(() => auditTypeDist.reduce((sum, item) => sum + item.value, 0))
 
 const typeOption = computed(() => ({
   color: PALETTE,
@@ -64,7 +79,7 @@ const resultCount = computed(() => ({
 }))
 
 function exportLogs() {
-  ElMessage.info('演示 Demo：正式环境按筛选条件导出脱敏审计日志（保留 180 天）')
+  ElMessage.info(`演示 Demo：正式环境按筛选条件导出脱敏审计日志（保留 ${policy.retentionText}）`)
 }
 
 function resultType(result) {
@@ -77,8 +92,8 @@ function resultType(result) {
     <PageHeader
       title="操作审计"
       feature="F-ADM-03"
-      desc="模板上下架、额度调整、退款审批、会员规格变更与登录行为全量留痕；支持按操作人、类型、结果筛选，日志保留 180 天。"
-      :tags="['全量留痕', '180 天保留', '可导出']"
+      :desc="`模板上下架、额度调整、退款审批、会员规格变更与登录行为全量留痕；支持按操作人、类型、结果筛选，日志保留 ${policy.retentionText}。`"
+      :tags="['全量留痕', `${policy.retentionText}保留`, '可导出']"
     >
       <template #actions>
         <el-button @click="exportLogs">
@@ -92,7 +107,7 @@ function resultType(result) {
       <div class="ap-card">
         <div class="ap-card__head">
           <div class="ap-card__title">操作类型分布</div>
-          <span class="ap-muted">近 7 天共 584 次操作</span>
+          <span class="ap-muted">近 7 天共 {{ total7d }} 次操作</span>
         </div>
         <div class="ap-card__body">
           <ChartBox :option="typeOption" :height="272" clickable @chart-click="(p) => ElMessage.info(`${p.name}：${p.value} 次`)" />
