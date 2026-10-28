@@ -4,60 +4,6 @@
   <!-- Maven项目模型版本，固定4.0.0 -->
   <modelVersion>4.0.0</modelVersion>
 
-	<configuration scan="true" scanPeriod="60 seconds">
-			<!-- 定义日志输出格式 -->
-			<property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"/>
-			<!-- 日志存放路径，放在项目根目录logs文件夹 -->
-			<property name="LOG_PATH" value="${user.home}/logs/photoshot"/>
-
-			<!-- 控制台输出：开发时看控制台 -->
-			<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-					<encoder>
-							<pattern>${LOG_PATTERN}</pattern>
-					</encoder>
-			</appender>
-
-			<!-- 【INFO 正常业务日志】只输出INFO、WARN，排除ERROR，按天切割，保留30天 -->
-			<appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-					<file>${LOG_PATH}/info.log</file>
-					<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-							<fileNamePattern>${LOG_PATH}/info.%d{yyyy-MM-dd}.log</fileNamePattern>
-							<maxHistory>30</maxHistory>
-					</rollingPolicy>
-					<filter class="ch.qos.logback.classic.filter.LevelFilter">
-							<level>ERROR</level>
-							<onMatch>DENY</onMatch> <!-- ERROR拒绝写入info日志 -->
-							<onMismatch>ACCEPT</onMismatch>
-					</filter>
-					<encoder>
-							<pattern>${LOG_PATTERN}</pattern>
-					</encoder>
-			</appender>
-
-			<!-- 【ERROR 错误日志】只输出ERROR级别日志，单独文件 -->
-			<appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-					<file>${LOG_PATH}/error.log</file>
-					<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-							<fileNamePattern>${LOG_PATH}/error.%d{yyyy-MM-dd}.log</fileNamePattern>
-							<maxHistory>30</maxHistory>
-					</rollingPolicy>
-					<filter class="ch.qos.logback.classic.filter.LevelFilter">
-							<level>ERROR</level>
-							<onMatch>ACCEPT</onMatch>
-							<onMismatch>DENY</onMismatch>
-					</filter>
-					<encoder>
-							<pattern>${LOG_PATTERN}</pattern>
-					</encoder>
-			</appender>
-
-			<!-- 根日志：绑定上面三个输出源 -->
-			<root level="info">
-					<appender-ref ref="CONSOLE"/>
-					<appender-ref ref="INFO_FILE"/>
-					<appender-ref ref="ERROR_FILE"/>
-			</root>
-	</configuration>
 
   <!-- SpringBoot父工程，统一管理所有依赖版本，避免版本冲突 -->
   <parent>
@@ -105,11 +51,49 @@
       <artifactId>spring-boot-starter-webmvc</artifactId>
     </dependency>
 
+    <!-- JSON 序列化（Jackson）：Spring Boot 4 起 webmvc starter 不再传递，需显式声明 -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-json</artifactId>
+    </dependency>
+
     <!-- MySQL数据库驱动，runtime：仅运行时需要，编译不需要 -->
     <dependency>
       <groupId>com.mysql</groupId>
       <artifactId>mysql-connector-j</artifactId>
       <scope>runtime</scope>
+    </dependency>
+
+    <!-- 数据库访问：Spring JDBC（JdbcTemplate），零配置、SQL 全部写在 DAO 里，便于评审逐条核对 -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-jdbc</artifactId>
+    </dependency>
+
+    <!-- H2：仅用于本地无 MySQL 时跑通登录注册链路（profile=h2，内存库） -->
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- JWT 签发与校验（与 Spring 版本解耦） -->
+    <!-- 邮件：邮箱验证码通道（SMTP）。只做发信，不做收信 -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-mail</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.auth0</groupId>
+      <artifactId>java-jwt</artifactId>
+      <version>4.4.0</version>
+    </dependency>
+
+    <!-- 只用 BCryptPasswordEncoder 做密码加盐哈希，不引入完整 Spring Security -->
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-crypto</artifactId>
     </dependency>
 
     <!-- Lombok：简化实体类，自动生成get/set/toString等，optional=true需要注解处理器配合 -->

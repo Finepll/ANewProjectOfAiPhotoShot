@@ -1,19 +1,99 @@
 server:
-  port: 8080
-#spring:
-#  datasource:
-#    driver-class-name: com.mysql.cj.jdbc.Driver
-#    url: jdbc:mysql://127.0.0.1:3306/demo_db?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-#    username: root
-#    password: 你的数据库密码
-mybatis:
-  mapper-locations: classpath:mybatis/*.xml
-  configuration:
-    map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-# logback由xml主导，yml只简单控制级别
+  port: 3000          # 与 frontend/vite.config.js 代理、miniprogram/utils/request.js 保持一致
+# logback 由 resources/logback-spring.xml 主导，这里只调级别
 logging:
   level:
     root: info
-    com.photoshot: info  # 自己项目代码日志级别
+    com.photoshot: info       # 自己项目代码日志级别
     org.springframework: warn # 框架日志减少噪音
+
+spring:
+  application:
+    name: photoshot-backend
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/photoshot?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+    username: ${DB_USERNAME:root}
+    # 数据库密码只从环境变量读取，仓库内不保存明文
+    password: ${DB_PASSWORD:}
+  sql:
+    init:
+      # 表结构请手动导入（脚本含 DROP TABLE，禁止随启动执行）：
+      #   mysql -uroot -p -e "CREATE DATABASE photoshot DEFAULT CHARSET utf8mb4"
+      #   mysql -uroot -p photoshot < src/main/resources/db/schema.sql
+      #   mysql -uroot -p photoshot < src/main/resources/db/data.sql
+      mode: never
+  jackson:
+    default-property-inclusion: non_null
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+
+# =====================================================================
+# 业务配置
+# =====================================================================
+app:
+  jwt:
+    # 正式环境必须换成随机密钥（≥32 字节）并放到环境变量里
+    secret: photoshot-dev-secret-please-change-in-production-32bytes
+    user-ttl-minutes: 10080   # C 端登录态 7 天
+    admin-ttl-minutes: 720    # 管理端登录态 12 小时
+  phone:
+    # 手机号只存 HMAC-SHA256(号码 + 本密钥) 与掩码，不存明文
+    hash-secret: photoshot-phone-hash-secret-please-change
+    mask:
+      keep-head: 3
+      keep-tail: 4
+  sms:
+    # true=开发/演示：验证码固定为 dev-code 且随响应回传（仅本地调试用）
+    # false=正式：必须接入真实短信通道，响应体不回传验证码
+    dev-mode: true
+    dev-code: '888888'
+    expire-seconds: 300       # 5 分钟
+    resend-seconds: 60        # 60 秒内不重复下发
+    daily-limit: 10           # 同号单日下发上限
+
+  mail:
+    # log=不联网，只记录（本地调试/测试）；smtp=真实发信
+    provider: ${MAIL_PROVIDER:smtp}
+    host: ${MAIL_HOST:smtp.qq.com}
+    port: ${MAIL_PORT:465}
+    ssl: true                # 465 直连 SSL；若改用 587 则设为 false（走 STARTTLS）
+    username: ${MAIL_USERNAME:}
+    # SMTP 授权码（不是登录密码）：只从环境变量读取，仓库内不保存明文
+    password: ${MAIL_PASSWORD:}
+    from: ${MAIL_FROM:}
+    from-name: AI照相馆
+    expire-minutes: 10       # 邮件比短信慢，有效期放长到 10 分钟
+    resend-seconds: 60
+    daily-limit: 10
+    # true=固定验证码且随响应回传（仅本地调试）；上线必须 false
+    dev-mode: ${MAIL_DEV_MODE:true}
+    dev-code: '888888'
+
+  user:
+    # 首次登录（自动注册）赠送的云增强次数
+    register-gift-quota: 5
+    default-agreement-version: V3.4
+  admin:
+    login:
+      fail-limit: 5           # 连续失败 5 次
+      lock-minutes: 30        # 锁定 30 分钟
+    # 管理员账号为「分配制」：系统不提供自助注册，账号由以下引导配置创建，
+    # 之后由超管在后台「管理员与权限」里分配（F-ADM-03）。
+    bootstrap-accounts:
+      - username: admin
+        password: admin123
+        real-name: 林小满
+        phone-masked: 138****0001
+        email-masked: ad***@photoshot.com
+        role-code: SUPER_ADMIN
+        must-change-password: false
+      - username: ops
+        password: ops123
+        real-name: 陈屿
+        phone-masked: 138****0002
+        email-masked: op*@photoshot.com
+        role-code: OPS
+        must-change-password: true
+  cors:
+    allowed-origins: http://localhost:5173,http://127.0.0.1:5173

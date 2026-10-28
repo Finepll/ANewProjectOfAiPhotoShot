@@ -1,0 +1,22 @@
+# =====================================================================
+# 本地免装 MySQL 的启动方式（仅用于跑通登录注册链路）：
+#   mvnw spring-boot:run -Dspring-boot.run.profiles=h2
+# 启动后 3000 端口即为真实接口，数据在内存库里，重启即清空
+# =====================================================================
+spring:
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:photoshot;MODE=MySQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ''
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/schema-h2.sql
+      data-locations: classpath:db/data-h2.sql
+
+app:
+  mail:
+    # 测试/内存库一律走 log 通道：绝不能因为跑单测而真的发邮件
+    provider: log
+    dev-mode: true
