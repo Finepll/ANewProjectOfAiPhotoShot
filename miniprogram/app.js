@@ -30,7 +30,9 @@ App({
   },
 
   refreshGlobal() {
-    const user = store.getUser()
+    const stored = store.getUser()
+    // 改版前的手机号账号没有 email 字段，按未登录处理，否则各页面会各自判一次。
+    const user = stored && stored.email ? stored : null
     const agreements = store.getAgreements()
     const privacy = store.getPrivacy()
     const member = store.getMember()
@@ -44,7 +46,7 @@ App({
   /** 需要登录态的页面在 onShow 里调用，未登录返回 false */
   ensureLogin(silent) {
     this.refreshGlobal()
-    const logged = !!(this.globalData.user && this.globalData.user.phone)
+    const logged = !!this.globalData.user
     if (!logged && !silent) {
       wx.navigateTo({ url: '/pages/login/index' })
     }

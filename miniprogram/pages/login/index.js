@@ -2,10 +2,26 @@ const app = getApp()
 const store = require('../../utils/store')
 
 const DEMO_CODE = '888888'
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+/** 由邮箱生成稳定的用户 ID：同一邮箱每次登录都得到同一个号，不依赖注册顺序。 */
+function userIdOf(email) {
+  let hash = 0
+  for (let i = 0; i < email.length; i++) hash = (hash * 31 + email.charCodeAt(i)) >>> 0
+  return 'U' + hash.toString(36).toUpperCase().padStart(6, '0').slice(-6)
+}
+
+/** 邮箱脱敏：保留前两位与完整域名，中间用星号。 */
+function maskEmail(email) {
+  const at = email.indexOf('@')
+  if (at <= 0) return email
+  const name = email.slice(0, at)
+  return (name.length <= 2 ? name : name.slice(0, 2) + '***') + email.slice(at)
+}
 
 Page({
   data: {
-    phone: '',
+    email: '',
     code: '',
     agreed: false,
     counting: 0,
@@ -29,8 +45,8 @@ Page({
     }
   },
 
-  onPhone(e) {
-    this.setData({ phone: e.detail.value.replace(/\D/g, '').slice(0, 11) })
+  onEmail(e) {
+    this.setData({ email: e.detail.value.replace(/\s/g, '').slice(0, 64) })
   },
 
   onCode(e) {
@@ -48,8 +64,8 @@ Page({
   /* ---------------- F-ACC-01 获取验证码 ---------------- */
   sendCode() {
     if (this.data.counting > 0 || this.data.sending) return
-    if (!/^1\d{10}$/.test(this.data.phone)) {
-      wx.showToast({ title: '请输入 11 位手机号', icon: 'none' })
+    if (!EMAIL_RE.test(this.data.email)) {
+      wx.showToast({ title: '请输入正确的邮箱地址', icon: 'none' })
       return
     }
     this.setData({ sending: true })
@@ -71,17 +87,17 @@ Page({
 
   /* ---------------- 登录（未注册自动注册） ---------------- */
   login() {
-    const phone = this.data.phone
-    if (!/^1\d{10}$/.test(phone)) {
-      wx.showToast({ title: '请输入 11 位手机号', icon: 'none' })
+    const email = this.data.email
+    if (!EMAIL_RE.test(email)) {
+      wx.showToast({ title: '请输入正确的邮箱地址', icon: 'none' })
       return
     }
     if (!/^\d{6}$/.test(this.data.code)) {
       wx.showToast({ title: '请输入 6 位验证码', icon: 'none' })
       return
     }
-    if (this.data.code !== DEMO_CODE && this.data.code !== '123456') {
-      wx.showToast({ title: '验证码不正确（演示用 888888）', icon: 'none' })
+    if (this.data.code !== DEMO_CODE) {
+      wx.showToast({ title: '验证码不正确（演示用 ' + DEMO_CODE + '）', icon: 'none' })
       return
     }
     if (!this.data.agreed) {
@@ -90,13 +106,16 @@ Page({
     }
     this.setData({ logging: true })
     setTimeout(() => {
-      const isNew = !store.getUser()
+      const prev = store.getUser()
+      // 换邮箱登录属于新账号，不能沿用上一个账号的昵称。
+      const isNew = !prev || prev.email !== email
+      const local = email.slice(0, email.indexOf('@'))
       const user = {
-        id: 'U' + phone.slice(-6),
-        phone,
-        phoneMask: phone.slice(0, 3) + '****' + phone.slice(-4),
-        nickname: isNew ? '影友 ' + phone.slice(-4) : (store.getUser() || {}).nickname || '影友 ' + phone.slice(-4),
-        avatarText: phone.slice(-2, -1),
+        id: userIdOf(email),
+        email,
+        emailMask: maskEmail(email),
+        nickname: isNew || !prev.nickname ? '影友 ' + local.slice(0, 4) : prev.nickname,
+        avatarText: (local[0] || '影').toUpperCase(),
         createdAt: new Date().toLocaleString('zh-CN')
       }
       store.setUser(user)
