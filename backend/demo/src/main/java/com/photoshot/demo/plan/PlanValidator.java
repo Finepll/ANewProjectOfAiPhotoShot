@@ -75,6 +75,10 @@ public class PlanValidator {
         Set<String> seen = new HashSet<>();
         List<PlanDsl.Step> cleaned = new ArrayList<>();
         for (PlanDsl.Step step : steps) {
+            if (step == null) {
+                errors.add("step 不能为空");
+                continue;
+            }
             String id = step.stepId();
             if (id == null || id.isBlank()) {
                 errors.add("stepId 不能为空");

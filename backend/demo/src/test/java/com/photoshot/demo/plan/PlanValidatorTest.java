@@ -117,4 +117,14 @@ class PlanValidatorTest {
                 List.of(step("s1", "BLUR", "DEVICE", Map.of("radius", 40), List.of())));
         assertFalse(validator.validate(p).valid());
     }
+
+    @Test
+    @DisplayName("steps 中包含 null 时拒绝而不是抛 NPE")
+    void rejectsNullStep() {
+        List<PlanDsl.Step> steps = new ArrayList<>();
+        steps.add(null);
+        PlanValidator.Result result = validator.validate(plan(0.9, false, steps));
+        assertFalse(result.valid());
+        assertTrue(result.errors().stream().anyMatch(e -> e.contains("step 不能为空")));
+    }
 }
