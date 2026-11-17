@@ -96,7 +96,7 @@
       </view>
       <view class="notice" style="margin-top: 18rpx">
         <text>提醒</text>
-        <text class="grow">虚拟商品一经使用不可退；未消费的权益可在「订单与账单」中申请退款。支付结果以服务端回调为准。</text>
+        <text class="grow">演示环境为模拟支付，不调用微信支付 SDK，确认后直接写入本地订单。虚拟商品一经使用不可退；未消费的权益可在「订单与账单」中申请退款。</text>
       </view>
       <view class="grid-2" style="margin-top: 22rpx">
         <view class="btn btn--ghost" bindtap="closeConfirm">取消</view>

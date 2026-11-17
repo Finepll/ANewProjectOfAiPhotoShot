@@ -5,7 +5,7 @@
       <view class="user__avatar">{{user ? user.avatarText : '访'}}</view>
       <view class="grow">
         <view class="user__name">{{user ? user.nickname : '未登录'}}</view>
-        <view class="tiny">{{user ? user.phoneMask : '手机号验证码登录，未注册自动注册'}}</view>
+        <view class="tiny">{{user ? user.emailMask : '邮箱验证码登录，未注册自动注册'}}</view>
         <view class="rec__tags">
           <text class="tag {{member.active ? 'tag--ink' : 'tag--tan'}}">{{member.active ? member.planName : '免费用户'}}</text>
           <text class="tag" wx:if="{{user}}">含额度 {{quota}} 次</text>
@@ -160,7 +160,7 @@
     </view>
     <view class="divider"></view>
     <view class="btn btn--ghost btn--block" wx:if="{{user}}" bindtap="logout">退出登录</view>
-    <view class="btn btn--primary btn--block" wx:else bindtap="goLogin">手机号登录</view>
+    <view class="btn btn--primary btn--block" wx:else bindtap="goLogin">邮箱登录</view>
   </view>
 
   <view class="notice" style="margin-top: 24rpx">

@@ -1,0 +1,13 @@
+.DS_Store
+
+# Java / Maven
+target/
+*.log
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Node
+node_modules/

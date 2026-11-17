@@ -1,12 +1,13 @@
 <view class="page page--flat editor">
   <!-- 画布区 -->
   <view class="stage-wrap">
+    <!-- 用 catch 而不是 bind：拖动贴纸或人像时，touchmove 若继续冒泡会让整页跟着滚动。 -->
     <canvas
       id="stage"
       type="2d"
       class="stage"
-      bindtouchstart="onTouchStart"
-      bindtouchmove="onTouchMove"
+      catchtouchstart="onTouchStart"
+      catchtouchmove="onTouchMove"
     ></canvas>
     <view class="stage__hint" wx:if="{{ready}}">
       <text class="tag tag--ink">{{dragTarget === 'sticker' ? '拖动贴纸' : '拖动人像'}}</text>

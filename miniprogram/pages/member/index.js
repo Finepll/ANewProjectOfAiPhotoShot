@@ -69,7 +69,7 @@ Page({
   },
 
   payMethodTap() {
-    wx.showToast({ title: '演示环境仅支持微信支付', icon: 'none' })
+    wx.showToast({ title: '演示环境为模拟支付，不调用微信支付 SDK', icon: 'none' })
   },
 
   /* ---------------- F-PAY-02 下单与支付 ---------------- */

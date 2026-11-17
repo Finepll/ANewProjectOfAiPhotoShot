@@ -1,5 +1,7 @@
 .editor {
-  padding-bottom: 20rpx;
+  /* 底部操作条是 fixed 的，实际高 128rpx：内边距 18 + 最高按钮 88 + 内边距 20 + 上边框 2，
+     另加安全区。原来只留 20rpx，页面最后一张卡片会被操作条压住。 */
+  padding-bottom: calc(148rpx + env(safe-area-inset-bottom));
 }
 
 .stage-wrap {
